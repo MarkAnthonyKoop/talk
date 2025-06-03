@@ -10,33 +10,44 @@ from . import LLMBackend, LLMBackendError
 
 log = logging.getLogger(__name__)
 
-class OpenAIBackend(LLMBackend):
+class OpenaiBackend(LLMBackend):
     def __init__(self, cfg: Dict):
         super().__init__(cfg)
         api_key_var = cfg.get("api_key_env", "OPENAI_API_KEY")
         api_key = os.getenv(api_key_var) or cfg.get("api_key")
         if not api_key:
             raise LLMBackendError(f"environment variable '{api_key_var}' not set")
-
+        
         try:
-            openai_mod = importlib.import_module("openai")
+            openai = importlib.import_module("openai")
         except ImportError as exc:
-            raise LLMBackendError("pip install openai") from exc
-
-        self.client = openai_mod.OpenAI(api_key=api_key)
+            raise LLMBackendError("pip install openai>=1.0.0") from exc
+        
+        self.client = openai.OpenAI(api_key=api_key)
         self.model_name = cfg.get("model_name", "gpt-3.5-turbo")
         self.max_tokens = cfg.get("max_tokens", 1500)
         self.temperature = cfg.get("temperature", 0.7)
-
+    
     def complete(self, messages: List[Message]) -> Message:
+        """Send messages to OpenAI and return the response."""
+        # Convert to OpenAI format
+        conv = [
+            {"role": m.role.value, "content": m.content or ""}
+            for m in messages
+            if m.content
+        ]
+        
         try:
-            resp = self.client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=[m.to_dict() for m in messages],
+                messages=conv,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
             )
-            msg_raw = resp.choices[0].message.to_dict()
-            return Message.from_provider(msg_raw)
+            
+            # Extract the content from the response
+            text = response.choices[0].message.content.strip()
+            return Message(role="assistant", content=text)  # type: ignore[arg-type]
+            
         except Exception as exc:
-            raise LLMBackendError(exc) from exc
+            raise LLMBackendError(f"OpenAI API error: {exc}") from exc
