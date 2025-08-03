@@ -77,6 +77,24 @@ class Task:
             self.task_id = str(uuid.uuid4())
         if not self.created_at:
             self.created_at = time.time()
+        if self.metadata is None:
+            self.metadata = {}
+    
+    def __lt__(self, other):
+        """Support comparison for priority queue ordering."""
+        if not isinstance(other, Task):
+            return NotImplemented
+        # Higher priority values should come first, so reverse comparison
+        if self.priority.value != other.priority.value:
+            return self.priority.value > other.priority.value
+        # If same priority, use creation time (older first)
+        return self.created_at < other.created_at
+    
+    def __eq__(self, other):
+        """Support equality comparison."""
+        if not isinstance(other, Task):
+            return NotImplemented
+        return self.task_id == other.task_id
 
 @dataclass
 class AgentInstance:
