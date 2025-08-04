@@ -2,355 +2,257 @@
 # special_agents/file_agent.py
 
 """
-FileAgent - Specialized agent for applying unified diffs to the filesystem.
+FileAgent - Enhanced file editing using Aider's SEARCH/REPLACE format.
 
-This agent takes a unified diff string as input and applies it to the filesystem
-using the system's 'patch' command. It handles file creation, modification, and
-error cases, and includes backup functionality for safety.
+This agent implements Aider's proven SEARCH/REPLACE block format for reliable
+code editing that preserves indentation and formatting.
 """
 
 from __future__ import annotations
 
 import logging
 import os
-import shutil
-import subprocess
-import tempfile
-from datetime import datetime
+import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from agent.agent import Agent
 
 log = logging.getLogger(__name__)
 
+
 class FileAgent(Agent):
     """
-    Specialized agent for filesystem operations.
+    Enhanced file agent using SEARCH/REPLACE blocks for reliable code editing.
     
-    This agent applies unified diffs to the filesystem using the system's
-    'patch' command. It doesn't use LLMs for its core functionality but
-    inherits from Agent for interface consistency.
+    Supports:
+    - SEARCH/REPLACE blocks for precise edits
+    - File creation with proper formatting
+    - Multiple edits per file
+    - Validation of search blocks
     """
     
     def __init__(self, base_dir: Optional[str] = None, **kwargs):
-        """
-        Initialize the FileAgent.
-        
-        Args:
-            base_dir: The base directory for file operations (defaults to current directory)
-            **kwargs: Additional arguments passed to the parent Agent class
-        """
-        # Initialize with empty roles since this agent doesn't use LLM prompting
+        """Initialize the FileAgent."""
         super().__init__(roles=[], **kwargs)
-        
-        # Set the base directory for file operations
         self.base_dir = Path(base_dir or os.getcwd()).resolve()
         log.info(f"FileAgent initialized with base directory: {self.base_dir}")
-        
-        # Create backup directory if it doesn't exist
-        self.backup_dir = self.base_dir / ".talk_backups"
-        os.makedirs(self.backup_dir, exist_ok=True)
     
     def run(self, input_text: str) -> str:
         """
-        Apply a unified diff to the filesystem.
+        Override the base Agent's run method to process file operations directly.
         
         Args:
-            input_text: A unified diff string to apply
+            input_text: File operations in SEARCH/REPLACE or CREATE_FILE format
             
         Returns:
-            A status message indicating success or failure
+            Status message indicating success or failure
         """
-        # Record the operation in the conversation log for provenance
-        self._append("user", f"Request to apply diff:\n{input_text}")
+        return self.reply(input_text)
+    
+    def reply(self, input_text: str, **kwargs) -> str:
+        """Process SEARCH/REPLACE blocks or file creation requests."""
+        self._append("user", f"File edit request:\n{input_text}")
         
         try:
-            # Apply the diff and get the result
-            result = self._apply_diff(input_text)
-            
-            # Record the result
-            self._append("assistant", result)
-            return result
-            
+            # Check if this is the new SEARCH/REPLACE format or old CREATE_FILE format
+            if "<<<<<<< SEARCH" in input_text or self._looks_like_search_replace(input_text):
+                results = self._process_edit_blocks(input_text)
+            elif "CREATE_FILE:" in input_text or "MODIFY_FILE:" in input_text:
+                # Fallback to old format for compatibility
+                results = [self._process_old_format(input_text)]
+            else:
+                # Try to parse as SEARCH/REPLACE anyway
+                results = self._process_edit_blocks(input_text)
+                
+            response = "\n".join(results)
+            self._append("assistant", response)
+            return response
         except Exception as e:
-            error_msg = f"ERROR: Failed to apply diff: {str(e)}"
-            log.error(error_msg)
+            error_msg = f"ERROR: Failed to process edits: {str(e)}"
+            log.error(error_msg, exc_info=True)
             self._append("assistant", error_msg)
             return error_msg
     
-    def _apply_diff(self, operations_text: str) -> str:
-        """
-        Apply structured file operations from CodeAgent.
+    def _process_edit_blocks(self, input_text: str) -> List[str]:
+        """Process all edit blocks in the input."""
+        results = []
         
-        Args:
-            operations_text: Structured file operations (CREATE_FILE, MODIFY_FILE, etc.)
-            
-        Returns:
-            A status message indicating success or failure
-        """
-        if not operations_text.strip():
-            return "No changes to apply (empty operations)"
+        # Find all file paths and their associated blocks
+        file_blocks = self._parse_file_blocks(input_text)
         
-        # Check if this is the new structured format or old diff format
-        if "CREATE_FILE:" in operations_text or "MODIFY_FILE:" in operations_text:
-            return self._apply_structured_operations(operations_text)
-        else:
-            # Fallback to old diff format
-            return self._apply_unified_diff(operations_text)
-    
-    def _apply_structured_operations(self, operations_text: str) -> str:
-        """
-        Apply structured file operations.
-        
-        Args:
-            operations_text: Text containing CREATE_FILE and MODIFY_FILE operations
-            
-        Returns:
-            Status message
-        """
-        try:
-            operations = self._parse_operations(operations_text)
-            results = []
-            
-            for operation in operations:
-                if operation['type'] == 'CREATE_FILE':
-                    result = self._create_file(operation['filename'], operation['content'])
-                    results.append(f"Created {operation['filename']}: {result}")
-                elif operation['type'] == 'MODIFY_FILE':
-                    result = self._modify_file(operation['filename'], operation['content'])
-                    results.append(f"Modified {operation['filename']}: {result}")
+        for file_path, blocks in file_blocks.items():
+            try:
+                if self._is_new_file(blocks):
+                    result = self._create_file(file_path, blocks[0])
                 else:
-                    results.append(f"Unknown operation: {operation['type']}")
-            
-            return "\n".join(results)
-            
-        except Exception as e:
-            return f"Error applying operations: {str(e)}"
+                    result = self._apply_edits(file_path, blocks)
+                results.append(f"{file_path}: {result}")
+            except Exception as e:
+                results.append(f"{file_path}: ERROR - {str(e)}")
+        
+        return results
     
-    def _parse_operations(self, operations_text: str) -> List[Dict]:
-        """Parse the structured operations text."""
-        operations = []
-        current_operation = None
-        current_content = ""
+    def _parse_file_blocks(self, input_text: str) -> Dict[str, List[Dict]]:
+        """Parse input text to extract file paths and their SEARCH/REPLACE blocks."""
+        file_blocks = {}
         
-        for line in operations_text.split('\n'):
-            line = line.strip()
-            
-            if line.startswith('CREATE_FILE:') or line.startswith('MODIFY_FILE:'):
-                # Save previous operation
-                if current_operation:
-                    operations.append({
-                        'type': current_operation['type'],
-                        'filename': current_operation['filename'],
-                        'content': current_content.strip()
-                    })
-                
-                # Start new operation
-                parts = line.split(':', 1)
-                current_operation = {
-                    'type': parts[0].strip(),
-                    'filename': parts[1].strip()
-                }
-                current_content = ""
-            else:
-                current_content += line + "\n"
+        # Pattern to match file paths followed by edit blocks
+        # Handles both fenced and unfenced formats
+        file_pattern = r'^([^\s]+\.(py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|swift|kt|scala|r|m|sql|sh|yaml|yml|json|xml|html|css|scss|vue|svelte))\s*$'
         
-        # Save final operation
-        if current_operation:
-            operations.append({
-                'type': current_operation['type'],
-                'filename': current_operation['filename'],
-                'content': current_content.strip()
-            })
+        lines = input_text.split('\n')
+        i = 0
+        current_file = None
         
-        return operations
-    
-    def _create_file(self, filename: str, content: str) -> str:
-        """Create a new file with the given content."""
-        try:
-            file_path = self.base_dir / filename
+        while i < len(lines):
+            line = lines[i].strip()
             
-            # Create parent directories if needed
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Write the file
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            
-            log.info(f"Created file: {file_path}")
-            return "SUCCESS"
-            
-        except Exception as e:
-            return f"ERROR: {str(e)}"
-    
-    def _modify_file(self, filename: str, diff_content: str) -> str:
-        """Modify an existing file using a unified diff."""
-        try:
-            # For now, treat modify as a diff operation
-            return self._apply_unified_diff(diff_content)
-        except Exception as e:
-            return f"ERROR: {str(e)}"
-    
-    def _apply_unified_diff(self, diff_text: str) -> str:
-        """
-        Apply a unified diff using the system's patch command.
-        
-        Args:
-            diff_text: A unified diff string
-            
-        Returns:
-            A status message indicating success or failure
-        """
-        if not diff_text.strip():
-            return "No changes to apply (empty diff)"
-        
-        # Create a temporary file for the diff
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.diff', delete=False) as temp_diff:
-            temp_diff.write(diff_text)
-            diff_path = temp_diff.name
-        
-        try:
-            # Extract affected file paths from the diff
-            affected_files = self._extract_file_paths(diff_text)
-            
-            # Create backup of affected files
-            backup_paths = self._backup_files(affected_files)
-            
-            # Apply the patch
-            # Using -p1 to strip the first path component (a/ and b/ prefixes)
-            # Using --forward to apply only if the patch can be applied in forward direction
-            result = subprocess.run(
-                ["patch", "-p1", "--forward", "-i", diff_path],
-                cwd=str(self.base_dir),
-                capture_output=True,
-                text=True,
-                check=False  # Don't raise exception on non-zero exit
-            )
-            
-            # Clean up the temporary diff file
-            os.unlink(diff_path)
-            
-            # Process the result
-            if result.returncode == 0:
-                # Success
-                return f"PATCH_APPLIED: {', '.join(affected_files)}\n{result.stdout}"
-            else:
-                # Failed to apply patch
-                self._restore_backups(backup_paths)
-                return f"PATCH_FAILED: {result.stderr}\n{result.stdout}"
-                
-        except Exception as e:
-            # Clean up and restore on error
-            if os.path.exists(diff_path):
-                os.unlink(diff_path)
-            
-            log.error(f"Error applying diff: {str(e)}")
-            return f"ERROR: {str(e)}"
-    
-    def _extract_file_paths(self, diff_text: str) -> List[str]:
-        """
-        Extract the file paths from a unified diff.
-        
-        Args:
-            diff_text: A unified diff string
-            
-        Returns:
-            A list of file paths affected by the diff
-        """
-        files = set()
-        
-        # Look for lines like "+++ b/path/to/file.py"
-        for line in diff_text.splitlines():
-            if line.startswith("+++ b/"):
-                # Extract the file path, removing "b/" prefix
-                file_path = line[6:].strip()
-                files.add(file_path)
-        
-        return list(files)
-    
-    def _backup_files(self, file_paths: List[str]) -> Dict[str, str]:
-        """
-        Create backups of the specified files.
-        
-        Args:
-            file_paths: List of file paths to backup
-            
-        Returns:
-            A dictionary mapping original paths to backup paths
-        """
-        backup_paths = {}
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        for file_path in file_paths:
-            full_path = self.base_dir / file_path
-            
-            # Skip if file doesn't exist (might be a new file)
-            if not full_path.exists():
+            # Check for file path
+            match = re.match(file_pattern, line, re.IGNORECASE)
+            if match:
+                current_file = match.group(1)
+                if current_file not in file_blocks:
+                    file_blocks[current_file] = []
+                i += 1
                 continue
             
-            # Create a backup path with timestamp
-            backup_name = f"{file_path.replace('/', '_')}_{timestamp}.bak"
-            backup_path = self.backup_dir / backup_name
+            # Check for SEARCH/REPLACE block
+            if line in ['```', '```python', '```javascript', '```typescript'] or line.startswith('```'):
+                # Look for SEARCH block
+                search_start = i + 1
+                if search_start < len(lines) and 'SEARCH' in lines[search_start]:
+                    block = self._extract_search_replace_block(lines, search_start)
+                    if block and current_file:
+                        file_blocks[current_file].append(block)
+                        i = block['end_index']
+                        continue
             
-            # Ensure the parent directory exists
-            os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+            # Also handle direct SEARCH markers without fences
+            if line.startswith('<<<<<<< SEARCH'):
+                block = self._extract_search_replace_block(lines, i)
+                if block and current_file:
+                    file_blocks[current_file].append(block)
+                    i = block['end_index']
+                    continue
             
-            # Copy the file to the backup location
-            shutil.copy2(full_path, backup_path)
-            backup_paths[file_path] = str(backup_path)
-            log.info(f"Backed up {file_path} to {backup_path}")
+            i += 1
         
-        return backup_paths
+        return file_blocks
     
-    def _restore_backups(self, backup_paths: Dict[str, str]) -> None:
-        """
-        Restore files from backups.
+    def _extract_search_replace_block(self, lines: List[str], start_idx: int) -> Optional[Dict]:
+        """Extract a single SEARCH/REPLACE block."""
+        search_content = []
+        replace_content = []
+        in_search = False
+        in_replace = False
+        i = start_idx
         
-        Args:
-            backup_paths: Dictionary mapping original paths to backup paths
-        """
-        for original_path, backup_path in backup_paths.items():
-            full_original_path = self.base_dir / original_path
+        while i < len(lines):
+            line = lines[i]
             
-            # Restore the file
-            shutil.copy2(backup_path, full_original_path)
-            log.info(f"Restored {original_path} from {backup_path}")
+            if '<<<<<<< SEARCH' in line:
+                in_search = True
+                in_replace = False
+            elif '=======' in line:
+                in_search = False
+                in_replace = True
+            elif '>>>>>>> REPLACE' in line:
+                return {
+                    'search': '\n'.join(search_content),
+                    'replace': '\n'.join(replace_content),
+                    'end_index': i + 1
+                }
+            elif in_search:
+                search_content.append(line)
+            elif in_replace:
+                replace_content.append(line)
+            
+            i += 1
+        
+        return None
     
-    def read_file(self, file_path: str) -> str:
-        """
-        Read the content of a file.
-        
-        Args:
-            file_path: Path to the file to read
-            
-        Returns:
-            The content of the file as a string
-        """
-        full_path = self.base_dir / file_path
-        
-        if not full_path.exists():
-            return f"ERROR: File not found: {file_path}"
-        
+    def _is_new_file(self, blocks: List[Dict]) -> bool:
+        """Check if this is a new file creation (empty SEARCH block)."""
+        return len(blocks) == 1 and blocks[0]['search'].strip() == ''
+    
+    def _create_file(self, file_path: str, block: Dict) -> str:
+        """Create a new file with the given content."""
         try:
-            with open(full_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except Exception as e:
-            log.error(f"Error reading file {file_path}: {str(e)}")
-            return f"ERROR: Failed to read file: {str(e)}"
-    
-    def file_exists(self, file_path: str) -> bool:
-        """
-        Check if a file exists.
-        
-        Args:
-            file_path: Path to the file to check
+            full_path = self.base_dir / file_path
             
-        Returns:
-            True if the file exists, False otherwise
-        """
-        full_path = self.base_dir / file_path
-        return full_path.exists()
+            # Create parent directories if needed
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Write the file
+            content = block['replace']
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            log.info(f"Created file: {full_path}")
+            return "SUCCESS - File created"
+            
+        except Exception as e:
+            return f"ERROR - {str(e)}"
+    
+    def _apply_edits(self, file_path: str, blocks: List[Dict]) -> str:
+        """Apply multiple SEARCH/REPLACE blocks to an existing file."""
+        try:
+            full_path = self.base_dir / file_path
+            
+            if not full_path.exists():
+                return "ERROR - File not found"
+            
+            # Read the file
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            original_content = content
+            applied_count = 0
+            
+            # Apply each block
+            for block in blocks:
+                search_text = block['search']
+                replace_text = block['replace']
+                
+                # Check if search text exists
+                if search_text not in content:
+                    log.warning(f"Search text not found in {file_path}")
+                    continue
+                
+                # Replace only the first occurrence
+                content = content.replace(search_text, replace_text, 1)
+                applied_count += 1
+            
+            # Write back if changes were made
+            if content != original_content:
+                # Create backup
+                self._create_backup(full_path)
+                
+                with open(full_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                
+                return f"SUCCESS - Applied {applied_count}/{len(blocks)} edits"
+            else:
+                return "WARNING - No changes applied"
+            
+        except Exception as e:
+            return f"ERROR - {str(e)}"
+    
+    def _create_backup(self, file_path: Path) -> None:
+        """Create a backup of the file before modifying."""
+        backup_dir = self.base_dir / '.talk_backups'
+        backup_dir.mkdir(exist_ok=True)
+        
+        # Create timestamped backup
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"{file_path.name}.{timestamp}.bak"
+        backup_path = backup_dir / backup_name
+        
+        import shutil
+        shutil.copy2(file_path, backup_path)
+        log.debug(f"Created backup: {backup_path}")
     
     def list_files(self, directory: str = "") -> List[str]:
         """
@@ -365,25 +267,87 @@ class FileAgent(Agent):
         dir_path = self.base_dir / directory
         
         if not dir_path.exists() or not dir_path.is_dir():
-            log.error(f"Directory not found or not a directory: {directory}")
             return []
         
+        files = []
+        for item in dir_path.iterdir():
+            if item.is_file():
+                # Return relative path from base_dir
+                rel_path = item.relative_to(self.base_dir)
+                files.append(str(rel_path))
+        
+        return sorted(files)
+    
+    def _looks_like_search_replace(self, text: str) -> bool:
+        """Check if text looks like it contains SEARCH/REPLACE blocks."""
+        return any(marker in text for marker in ['```', 'SEARCH', 'REPLACE', '======='])
+    
+    def _process_old_format(self, operations_text: str) -> str:
+        """Process old CREATE_FILE/MODIFY_FILE format for compatibility."""
         try:
-            # Get all files recursively
-            files = []
-            for root, _, filenames in os.walk(dir_path):
-                rel_root = os.path.relpath(root, self.base_dir)
-                for filename in filenames:
-                    # Skip backup files and hidden files
-                    if filename.startswith('.') or filename.endswith('.bak'):
-                        continue
-                    
-                    rel_path = os.path.join(rel_root, filename)
-                    # Normalize path separators
-                    rel_path = rel_path.replace('\\', '/')
-                    files.append(rel_path)
+            operations = self._parse_old_operations(operations_text)
+            results = []
             
-            return sorted(files)
+            for operation in operations:
+                if operation['type'] == 'CREATE_FILE':
+                    result = self._create_file_old(operation['filename'], operation['content'])
+                    results.append(f"Created {operation['filename']}: {result}")
+                else:
+                    results.append(f"Unsupported operation: {operation['type']}")
+            
+            return " ".join(results)
         except Exception as e:
-            log.error(f"Error listing files in {directory}: {str(e)}")
-            return []
+            return f"ERROR: {str(e)}"
+    
+    def _parse_old_operations(self, operations_text: str) -> List[Dict]:
+        """Parse old CREATE_FILE format."""
+        operations = []
+        lines = operations_text.split('\n')
+        
+        current_operation = None
+        current_content = []
+        
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            
+            if stripped.startswith('CREATE_FILE:'):
+                # Save previous operation
+                if current_operation:
+                    operations.append({
+                        'type': current_operation['type'],
+                        'filename': current_operation['filename'],
+                        'content': '\n'.join(current_content)
+                    })
+                
+                # Start new operation
+                filename = stripped[12:].strip()
+                current_operation = {'type': 'CREATE_FILE', 'filename': filename}
+                current_content = []
+            else:
+                # Accumulate content with original indentation
+                if current_operation:
+                    current_content.append(line)
+        
+        # Save last operation
+        if current_operation:
+            operations.append({
+                'type': current_operation['type'],
+                'filename': current_operation['filename'],
+                'content': '\n'.join(current_content)
+            })
+        
+        return operations
+    
+    def _create_file_old(self, filename: str, content: str) -> str:
+        """Create file using old format content."""
+        try:
+            full_path = self.base_dir / filename
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            log.info(f"Created file (old format): {full_path}")
+            return "SUCCESS"
+        except Exception as e:
+            return f"ERROR - {str(e)}"
