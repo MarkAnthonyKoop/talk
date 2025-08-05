@@ -74,20 +74,29 @@ class AssessorAgent(Agent):
         ]
         
         self.complex_patterns = [
-            r"build\s+(a|an)?\s*(system|framework|application|platform)",
-            r"create\s+(a|an)?\s*(complete|full|entire)",
-            r"implement\s+(a|an)?\s*(comprehensive|full-featured)",
+            r"build\s+(a|an)?\s*(system|framework|application|platform|orchestrat)",
+            r"create\s+(a|an)?\s*(complete|full|entire|comprehensive)",
+            r"implement\s+(a|an)?\s*(comprehensive|full-featured|complete)",
             r"design\s+and\s+implement",
             r"architect\s+(a|an)?\s*",
+            r"develop\s+(a|an)?\s*(multi|distributed|complex)",
+            r"orchestrat\w+\s+system",
+            r"agent\s+system",
+            r"multi[- ]agent",
         ]
         
         self.epic_patterns = [
             r"production[- ]ready",
-            r"enterprise[- ]grade",
+            r"enterprise[- ]grade", 
             r"scalable\s+.*(system|platform)",
             r"microservice",
             r"kubernetes|k8s",
             r"full[- ]stack",
+            r"distributed\s+system",
+            r"cloud[- ]native",
+            r"high[- ]availability",
+            r"fault[- ]tolerant",
+            r"real[- ]time\s+system",
         ]
     
     def assess_task(self, task: str) -> Dict[str, any]:
