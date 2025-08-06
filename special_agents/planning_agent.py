@@ -2,284 +2,217 @@
 """
 PlanningAgent - Strategic decision maker with hierarchical todo tracking.
 
-This agent analyzes the current state of execution, maintains a hierarchical
-todo list, and provides strategic recommendations for what to do next.
-It provides SPECIFIC action recommendations that map to Step labels.
+This agent uses the LLM to analyze the current state of execution and provide
+strategic recommendations for what to do next. It maintains context through
+the conversation history and outputs structured recommendations.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
 
 from agent.agent import Agent
 
 log = logging.getLogger(__name__)
 
 
-class TodoStatus(Enum):
-    """Status of a todo item."""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
-@dataclass
-class TodoNode:
-    """A node in the hierarchical todo tree."""
-    description: str
-    status: TodoStatus = TodoStatus.PENDING
-    children: List[TodoNode] = field(default_factory=list)
-    
-    def to_string(self, indent: int = 0) -> str:
-        """Convert to indented string representation."""
-        status_map = {
-            TodoStatus.PENDING: "[ ]",
-            TodoStatus.IN_PROGRESS: "[→]",
-            TodoStatus.COMPLETED: "[✓]",
-            TodoStatus.FAILED: "[✗]",
-            TodoStatus.SKIPPED: "[~]"
-        }
-        
-        result = "    " * indent + f"{status_map[self.status]} {self.description}"
-        for child in self.children:
-            result += "\n" + child.to_string(indent + 1)
-        return result
-    
-    def count_status(self) -> Dict[str, int]:
-        """Count todos by status."""
-        counts = {s.value: 0 for s in TodoStatus}
-        counts[self.status.value] += 1
-        
-        for child in self.children:
-            child_counts = child.count_status()
-            for status, count in child_counts.items():
-                counts[status] += count
-        
-        return counts
-
-
-class TodoTree:
-    """Simple hierarchical todo manager."""
-    
-    def __init__(self):
-        self.root: Optional[TodoNode] = None
-        self.current_path: List[TodoNode] = []
-    
-    def initialize_simple(self, task: str):
-        """Initialize with a simple todo structure for any task."""
-        self.root = TodoNode(f"Complete: {task}", TodoStatus.IN_PROGRESS)
-        
-        # Add standard sub-tasks
-        self.root.children = [
-            TodoNode("Generate code implementation", TodoStatus.PENDING),
-            TodoNode("Apply code to files", TodoStatus.PENDING),
-            TodoNode("Validate implementation", TodoStatus.PENDING)
-        ]
-        
-        self.current_path = [self.root]
-    
-    def get_next_todo(self) -> Optional[TodoNode]:
-        """Get the next pending todo."""
-        def find_pending(node: TodoNode) -> Optional[TodoNode]:
-            if node.status == TodoStatus.PENDING:
-                return node
-            for child in node.children:
-                result = find_pending(child)
-                if result:
-                    return result
-            return None
-        
-        if self.root:
-            return find_pending(self.root)
-        return None
-    
-    def mark_todo_complete(self, description: str):
-        """Mark a todo as complete by description match."""
-        def mark_in_tree(node: TodoNode) -> bool:
-            if description.lower() in node.description.lower():
-                node.status = TodoStatus.COMPLETED
-                return True
-            for child in node.children:
-                if mark_in_tree(child):
-                    return True
-            return False
-        
-        if self.root:
-            mark_in_tree(self.root)
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get overall status."""
-        if not self.root:
-            return {"total": 0}
-        
-        counts = self.root.count_status()
-        total = sum(counts.values())
-        
-        return {
-            "total": total,
-            **counts,
-            "completion_rate": counts.get("completed", 0) / total if total > 0 else 0
-        }
-
-
 class PlanningAgent(Agent):
     """
-    Simplified planning agent that provides clear action recommendations.
+    Strategic planning agent that uses LLM to analyze state and recommend actions.
+    
+    This agent:
+    1. Analyzes the current blackboard state and task progress
+    2. Uses the LLM to reason about what should happen next
+    3. Returns structured recommendations that include specific action labels
+    4. Maintains conversation history for context
     """
     
     def __init__(self, **kwargs):
-        """Initialize the planning agent."""
-        super().__init__(**kwargs)
-        self.todo_tree = TodoTree()
-        self.initialized = False
-        self.last_action = None
-        self.action_count = 0
+        """Initialize the planning agent with strategic roles."""
+        roles = [
+            "You are a strategic planning agent for a multi-agent orchestration system.",
+            "You analyze the current state of task execution and recommend the next action.",
+            "You maintain a mental model of the task progress and what remains to be done.",
+            "",
+            "IMPORTANT: You must recommend specific action labels that map to workflow steps:",
+            "- generate_code: Generate code implementation",
+            "- apply_files: Apply code changes to files", 
+            "- run_tests: Execute tests to validate changes",
+            "- research: Search for information (if available)",
+            "- complete: Mark the task as complete",
+            "- error_recovery: Handle errors and retry",
+            "",
+            "Your output should be structured JSON that includes:",
+            "1. A hierarchical todo list showing task breakdown",
+            "2. Analysis of the current situation",
+            "3. A specific next_action recommendation (must be one of the labels above)",
+            "4. Reasoning for your recommendation"
+        ]
+        super().__init__(roles=roles, **kwargs)
+        
+        # Track state across calls
+        self.task_description = None
+        self.actions_taken = []
+        self.scratch_dir = None
     
     def run(self, input_text: str) -> str:
         """
-        Analyze state and provide planning recommendations.
+        Analyze state and provide planning recommendations using the LLM.
         
+        Args:
+            input_text: Current blackboard state and context (usually JSON)
+            
         Returns:
-            JSON string with clear action recommendation
+            LLM completion with structured planning output
         """
         try:
-            # Parse the input
+            # Parse input if it's JSON
             blackboard_state = self._parse_input(input_text)
-            task = blackboard_state.get("task_description", "")
             
-            # Initialize on first run
-            if not self.initialized:
-                self.todo_tree.initialize_simple(task)
-                self.initialized = True
+            # Initialize or update task description
+            if "task_description" in blackboard_state:
+                self.task_description = blackboard_state["task_description"]
             
-            # Update based on last action
-            last_action = blackboard_state.get("last_action", "")
-            last_result = blackboard_state.get("last_result", "")
+            # Build the prompt for the LLM
+            prompt = self._build_planning_prompt(blackboard_state)
             
-            # Determine next action based on simple state machine
-            next_action = self._determine_next_action(last_action, last_result, task)
+            # Get LLM's strategic analysis
+            self._append("user", prompt)
+            completion = self.call_ai()
+            self._append("assistant", completion)
             
-            # Update todo status
-            if "generate_code" in last_action and last_result:
-                self.todo_tree.mark_todo_complete("Generate code")
-            elif "apply_files" in last_action and last_result:
-                self.todo_tree.mark_todo_complete("Apply code")
-            elif "run_tests" in last_action:
-                self.todo_tree.mark_todo_complete("Validate")
+            # Track this action
+            if "last_action" in blackboard_state and blackboard_state["last_action"]:
+                self.actions_taken.append(blackboard_state["last_action"])
             
-            # Build output
-            todo_status = self.todo_tree.get_status()
+            # Optionally save to scratch for other agents
+            self._save_to_scratch(completion)
             
-            output = {
-                "todo_hierarchy": self.todo_tree.root.to_string() if self.todo_tree.root else f"[ ] {task}",
-                "current_path": [],
-                "stats": todo_status,
-                "analysis": {
-                    "situation": self._get_situation(last_action, last_result),
-                    "next_focus": f"Action: {next_action}",
-                    "action_needed": next_action,
-                    "potential_problems": "",
-                    "fallback_plan": "generate_code" if next_action != "generate_code" else "research",
-                    "confidence": "high" if self.action_count < 10 else "medium"
-                },
-                "recommendation": next_action,
-                "next_action": next_action,
-                "next_todo": self.todo_tree.get_next_todo().description if self.todo_tree.get_next_todo() else "Complete"
-            }
-            
-            self.last_action = next_action
-            self.action_count += 1
-            
-            return json.dumps(output, indent=2)
+            return completion
             
         except Exception as e:
             log.error(f"Planning error: {e}")
-            # Return a valid action even on error
-            return json.dumps({
-                "error": str(e),
-                "recommendation": "generate_code",
-                "next_action": "generate_code",
-                "analysis": {
-                    "situation": "Error occurred",
-                    "action_needed": "generate_code"
-                }
-            })
+            # Return a valid planning response even on error
+            error_response = f"""{{
+    "error": "{str(e)}",
+    "todo_hierarchy": "[ ] Recover from error\\n    [ ] Analyze error\\n    [ ] Retry task",
+    "analysis": {{
+        "situation": "An error occurred during planning",
+        "action_needed": "generate_code",
+        "confidence": "low"
+    }},
+    "next_action": "generate_code",
+    "recommendation": "Starting with code generation due to planning error"
+}}"""
+            return error_response
     
     def _parse_input(self, input_text: str) -> Dict[str, Any]:
         """Parse the input to extract blackboard state."""
         try:
             return json.loads(input_text)
         except json.JSONDecodeError:
-            # Fall back to simple parsing
+            # If not JSON, treat as plain text task description
             return {
                 "task_description": input_text,
+                "blackboard_state": {},
                 "last_action": "",
                 "last_result": ""
             }
     
-    def _determine_next_action(self, last_action: str, last_result: str, task: str) -> str:
-        """
-        Determine the next action based on simple state machine.
+    def _build_planning_prompt(self, blackboard_state: Dict[str, Any]) -> str:
+        """Build a comprehensive prompt for strategic planning."""
+        task = blackboard_state.get("task_description", "No task specified")
+        last_action = blackboard_state.get("last_action", "")
+        last_result = blackboard_state.get("last_result", "")
         
-        This returns ACTUAL Step labels that exist in the workflow.
-        """
-        # If this is the first run or we have no last action
-        if not last_action or last_action == "plan_next":
-            # Check if we have completed some work
-            if self.action_count == 0:
-                return "generate_code"  # Start with code generation
-            elif self.action_count > 10:
-                return "complete"  # Prevent infinite loops
+        # Build context about what's happened so far
+        context_parts = [f"TASK: {task}"]
         
-        # State machine for action flow
-        if "generate_code" in last_action:
-            if "code" in last_result.lower() or "function" in last_result.lower() or "def" in last_result.lower():
-                return "apply_files"  # Code was generated, apply it
-            else:
-                return "generate_code"  # Try again
+        if self.actions_taken:
+            context_parts.append(f"\nACTIONS TAKEN SO FAR: {', '.join(self.actions_taken)}")
         
-        elif "apply_files" in last_action:
-            if "applied" in last_result.lower() or "created" in last_result.lower() or "modified" in last_result.lower():
-                return "run_tests"  # Files applied, test them
-            else:
-                return "run_tests"  # Try testing anyway
+        if last_action:
+            context_parts.append(f"\nLAST ACTION: {last_action}")
+            
+        if last_result:
+            # Truncate very long results
+            if len(last_result) > 500:
+                last_result = last_result[:500] + "... (truncated)"
+            context_parts.append(f"\nLAST RESULT: {last_result}")
         
-        elif "run_tests" in last_action:
-            # Tests were run, we're done
-            return "complete"
+        # Add any additional blackboard state
+        if "blackboard_state" in blackboard_state:
+            state_info = blackboard_state["blackboard_state"]
+            if state_info:
+                context_parts.append(f"\nADDITIONAL STATE: {json.dumps(state_info, indent=2)}")
         
-        elif "research" in last_action:
-            # Research done, generate code
-            return "generate_code"
+        context = "\n".join(context_parts)
         
-        elif "error" in last_action.lower():
-            # Error occurred, try to generate code
-            return "generate_code"
+        prompt = f"""{context}
+
+Based on the above context, provide strategic planning for the next step.
+
+Create a hierarchical todo list showing the overall task breakdown and current progress.
+Analyze what has been accomplished and what remains to be done.
+Recommend the specific next action to take.
+
+Your response must be valid JSON in this format:
+{{
+    "todo_hierarchy": "[ ] Main task\\n    [ ] Subtask 1\\n    [✓] Subtask 2 (completed)\\n    [ ] Subtask 3",
+    "current_path": ["Main task", "Current subtask"],
+    "stats": {{
+        "total": 5,
+        "completed": 2,
+        "pending": 3
+    }},
+    "analysis": {{
+        "situation": "Current state assessment",
+        "next_focus": "What to focus on next",
+        "action_needed": "Specific action recommendation",
+        "potential_problems": "Any issues to watch for",
+        "confidence": "high/medium/low"
+    }},
+    "next_action": "generate_code|apply_files|run_tests|research|complete|error_recovery",
+    "recommendation": "Explanation of why this action is recommended"
+}}
+
+IMPORTANT: The "next_action" field must be exactly one of: generate_code, apply_files, run_tests, research, complete, error_recovery
+
+Think step by step:
+1. What is the task asking for?
+2. What progress has been made?
+3. What's the logical next step?
+4. Which specific action label best matches that step?"""
         
-        elif "complete" in last_action:
-            # Already complete
-            return "complete"
-        
-        # Default: generate code
-        return "generate_code"
+        return prompt
     
-    def _get_situation(self, last_action: str, last_result: str) -> str:
-        """Get a description of the current situation."""
-        if not last_action:
-            return "Starting new task"
-        elif "generate_code" in last_action:
-            return "Code generation attempted"
-        elif "apply_files" in last_action:
-            return "Files have been applied"
-        elif "run_tests" in last_action:
-            return "Tests have been executed"
-        elif "complete" in last_action:
-            return "Task completed"
-        else:
-            return "Processing task"
+    def _save_to_scratch(self, completion: str):
+        """Save planning output to scratch directory for other agents."""
+        try:
+            # Create scratch directory if needed
+            if not self.scratch_dir:
+                base_dir = Path.cwd()
+                scratch_dir = base_dir / ".talk_scratch"
+                scratch_dir.mkdir(exist_ok=True)
+                self.scratch_dir = scratch_dir
+            
+            # Save the latest planning output
+            planning_file = self.scratch_dir / "latest_planning.json"
+            
+            # Try to parse and save as formatted JSON
+            try:
+                planning_data = json.loads(completion)
+                with open(planning_file, "w") as f:
+                    json.dump(planning_data, f, indent=2)
+            except json.JSONDecodeError:
+                # If not valid JSON, save as text
+                with open(planning_file, "w") as f:
+                    f.write(completion)
+                    
+        except Exception as e:
+            log.debug(f"Could not save to scratch: {e}")
+            # Not critical, so we just log and continue
