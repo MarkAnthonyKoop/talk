@@ -37,35 +37,17 @@ class FileAgent(Agent):
         super().__init__(roles=[], **kwargs)
         self.base_dir = Path(base_dir or os.getcwd()).resolve()
         log.info(f"FileAgent initialized with base directory: {self.base_dir}")
-    
-    def run(self, input_text: str) -> str:
-        """
-        Override the base Agent's run method to process file operations directly.
         
-        Args:
-            input_text: File operations in SEARCH/REPLACE or CREATE_FILE format
-            
-        Returns:
-            Status message indicating success or failure
-        """
-        return self.reply(input_text)
+        # Track files for validation
+        self._file_cache = {}
     
     def reply(self, input_text: str, **kwargs) -> str:
         """Process SEARCH/REPLACE blocks or file creation requests."""
         self._append("user", f"File edit request:\n{input_text}")
         
         try:
-            # Check if this is the new SEARCH/REPLACE format or old CREATE_FILE format
-            if "<<<<<<< SEARCH" in input_text or self._looks_like_search_replace(input_text):
-                results = self._process_edit_blocks(input_text)
-            elif "CREATE_FILE:" in input_text or "MODIFY_FILE:" in input_text:
-                # Fallback to old format for compatibility
-                results = [self._process_old_format(input_text)]
-            else:
-                # Try to parse as SEARCH/REPLACE anyway
-                results = self._process_edit_blocks(input_text)
-                
-            response = "\n".join(results)
+            results = self._process_edit_blocks(input_text)
+            response = "\n".join(results) if results else "No operations performed"
             self._append("assistant", response)
             return response
         except Exception as e:
@@ -99,7 +81,7 @@ class FileAgent(Agent):
         
         # Pattern to match file paths followed by edit blocks
         # Handles both fenced and unfenced formats
-        file_pattern = r'^([^\s]+\.(py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|swift|kt|scala|r|m|sql|sh|yaml|yml|json|xml|html|css|scss|vue|svelte))\s*$'
+        file_pattern = r'^([^\s]+\.(py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|swift|kt|scala|r|m|sql|sh|yaml|yml|json|xml|html|css|scss|vue|svelte|txt|md|log|conf|cfg|ini|toml))\s*$'
         
         lines = input_text.split('\n')
         i = 0
@@ -253,101 +235,3 @@ class FileAgent(Agent):
         import shutil
         shutil.copy2(file_path, backup_path)
         log.debug(f"Created backup: {backup_path}")
-    
-    def list_files(self, directory: str = "") -> List[str]:
-        """
-        List files in a directory.
-        
-        Args:
-            directory: Relative path to the directory to list
-            
-        Returns:
-            A list of file paths in the directory
-        """
-        dir_path = self.base_dir / directory
-        
-        if not dir_path.exists() or not dir_path.is_dir():
-            return []
-        
-        files = []
-        for item in dir_path.iterdir():
-            if item.is_file():
-                # Return relative path from base_dir
-                rel_path = item.relative_to(self.base_dir)
-                files.append(str(rel_path))
-        
-        return sorted(files)
-    
-    def _looks_like_search_replace(self, text: str) -> bool:
-        """Check if text looks like it contains SEARCH/REPLACE blocks."""
-        return any(marker in text for marker in ['```', 'SEARCH', 'REPLACE', '======='])
-    
-    def _process_old_format(self, operations_text: str) -> str:
-        """Process old CREATE_FILE/MODIFY_FILE format for compatibility."""
-        try:
-            operations = self._parse_old_operations(operations_text)
-            results = []
-            
-            for operation in operations:
-                if operation['type'] == 'CREATE_FILE':
-                    result = self._create_file_old(operation['filename'], operation['content'])
-                    results.append(f"Created {operation['filename']}: {result}")
-                else:
-                    results.append(f"Unsupported operation: {operation['type']}")
-            
-            return " ".join(results)
-        except Exception as e:
-            return f"ERROR: {str(e)}"
-    
-    def _parse_old_operations(self, operations_text: str) -> List[Dict]:
-        """Parse old CREATE_FILE format."""
-        operations = []
-        lines = operations_text.split('\n')
-        
-        current_operation = None
-        current_content = []
-        
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-            
-            if stripped.startswith('CREATE_FILE:'):
-                # Save previous operation
-                if current_operation:
-                    operations.append({
-                        'type': current_operation['type'],
-                        'filename': current_operation['filename'],
-                        'content': '\n'.join(current_content)
-                    })
-                
-                # Start new operation
-                filename = stripped[12:].strip()
-                current_operation = {'type': 'CREATE_FILE', 'filename': filename}
-                current_content = []
-            else:
-                # Accumulate content with original indentation
-                if current_operation:
-                    current_content.append(line)
-        
-        # Save last operation
-        if current_operation:
-            operations.append({
-                'type': current_operation['type'],
-                'filename': current_operation['filename'],
-                'content': '\n'.join(current_content)
-            })
-        
-        return operations
-    
-    def _create_file_old(self, filename: str, content: str) -> str:
-        """Create file using old format content."""
-        try:
-            full_path = self.base_dir / filename
-            full_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(full_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            
-            log.info(f"Created file (old format): {full_path}")
-            return "SUCCESS"
-        except Exception as e:
-            return f"ERROR - {str(e)}"

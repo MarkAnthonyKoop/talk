@@ -1,0 +1,36 @@
+Feature,Original (tmp/),file_agent.py (Current),file_agent_old.py,file_agent_simple.py,improved_file_agent.py
+Lines of Code,78,352,389,393,236
+Date Created,Aug 2,Aug 4,Aug 4,Aug 4,Aug 4
+Class Name,FileAgent,FileAgent,FileAgent,FileAgent,ImprovedFileAgent
+Primary Architecture,Unix patch wrapper,SEARCH/REPLACE blocks,Hybrid (structured + patch),Hybrid (structured + patch),SEARCH/REPLACE only
+Supported Input Formats,Unified diff only,"SEARCH/REPLACE, CREATE_FILE (legacy)","CREATE_FILE, MODIFY_FILE, unified diff","CREATE_FILE, MODIFY_FILE, unified diff",SEARCH/REPLACE blocks only
+SEARCH/REPLACE Support,No,Yes (primary),No,No,Yes (only)
+CREATE_FILE Support,No,Yes (compatibility),Yes,Yes,No
+Unified Diff Support,Yes (only),No,Yes (fallback),Yes (fallback),No
+Patch Command Used,patch -p0,N/A,patch -p1 --forward,patch -p1 --forward,N/A
+Backup Mechanism,None,.talk_backups dir,.talk_backups dir,.talk_backups dir,.talk_backups dir
+Backup Timestamp Format,N/A,"%Y%m%d_%H%M%S","%Y%m%d_%H%M%S","%Y%m%d_%H%M%S","%Y%m%d_%H%M%S"
+Error Recovery,Basic,Per-file reporting,Backup restore on failure,Backup restore on failure,Per-file reporting
+File Creation Method,N/A,Direct write with mkdir -p,Direct write with mkdir -p,Direct write with mkdir -p,Direct write with mkdir -p
+Indentation Handling,N/A,Preserved in parsing,line.strip() throughout,Fixed: line preserved in content,Preserved in parsing
+Main Entry Point,run() → act(),run() → reply(),run() → _apply_diff(),run() → _apply_diff(),reply() only (no run())
+File Utilities,None,list_files() only,"read_file(), file_exists(), list_files()","read_file(), file_exists(), list_files()",None
+Parse Strategy,N/A,Regex for file extensions + block detection,Simple line.startswith() checks,Simple line.startswith() checks,Regex for file extensions + block detection
+File Extension Pattern,N/A,"py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|swift|kt|scala|r|m|sql|sh|yaml|yml|json|xml|html|css|scss|vue|svelte",N/A,N/A,"py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|swift|kt|scala|r|m|sql|sh|yaml|yml|json|xml|html|css|scss|vue|svelte"
+Multi-file Support,No,Yes,Yes,Yes,Yes
+Per-file Results,No,Yes,Combined status,Combined status,Yes
+Constructor Args,"name, id, overrides","base_dir, **kwargs","base_dir, **kwargs","base_dir, **kwargs","base_dir, **kwargs"
+Uses LLM,No,No (roles=[]),No (roles=[]),No (roles=[]),No (roles=[])
+Conversation Logging,No,Yes (_append),Yes (_append),Yes (_append),Yes (_append)
+File Cache,No,No,No,No,Yes (_file_cache dict)
+SEARCH Block Markers,N/A,"<<<<<<< SEARCH, =======, >>>>>>> REPLACE",N/A,N/A,"<<<<<<< SEARCH, =======, >>>>>>> REPLACE"
+Content Stripping Bug,N/A,No (preserves lines),Yes (strips all lines),Fixed (only strips for detection),No (preserves lines)
+Replace Strategy,N/A,First occurrence only,N/A,N/A,First occurrence only
+Temp File Handling,Creates and cleans up,N/A,Creates and cleans up,Creates and cleans up,N/A
+Subprocess Error Handling,CalledProcessError,N/A,check=False with returncode check,check=False with returncode check,N/A
+Import Differences,Basic imports,"+ re, typing extensions","+ shutil, datetime","+ shutil, datetime","+ re, no shutil in main imports"
+Hidden File Handling,N/A,N/A,Skips dotfiles and .bak files,Skips dotfiles and .bak files,N/A
+Directory Walking,N/A,iterdir() non-recursive,os.walk() recursive,os.walk() recursive,N/A
+Path Normalization,N/A,Uses Path.relative_to(),Replaces backslashes,Replaces backslashes,N/A
+Legacy Format Handler,N/A,_process_old_format() method,_parse_operations() method,_parse_operations() method,N/A
+Modify File Strategy,N/A,N/A,Delegates to _apply_unified_diff(),Delegates to _apply_unified_diff(),N/A

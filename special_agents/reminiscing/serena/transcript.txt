@@ -1,0 +1,1140 @@
+
+
+
+Skip navigation
+Search
+
+
+
+Create
+
+
+Avatar image
+Wait.. Claude Code is MADE Slow on Purpose? Heres How to Fix It
+
+AI LABS
+71.8K subscribers
+
+Join
+
+Subscribe
+
+1.4K
+
+
+Share
+
+Download
+
+Thanks
+
+Clip
+
+Save
+
+37,679 views  Jul 22, 2025  #mcp #claude #cursor
+Unlock Claude Code with this powerful new setup that boosts performance and precision. In this Claude Code tutorial, we’ll walk through a Claude Code setup using semantic indexing and reveal a smarter Claude Code workflow—plus an honest Claude Code review.
+
+
+🔗 Tools Mentioned:
+Claude Code Usage Monitor: https://github.com/Maciek-roboblog/Cl...
+Serena MCP for Claude Code: https://github.com/oraios/serena
+
+If you’ve been torn between Cursor and Claude Code, this video clears it up. We break down Claude Code vs Cursor, and show how semantic indexing through Claude Code MCP completely changes the game. Whether you're running Claude Code on Windows, setting up Claude Code in Cursor, or integrating Claude Code for VSCode workflows—this guide has you covered.
+
+You'll also learn how to use Claude Code to maximize performance with minimal tokens. We cover advanced Claude Code workflow tips, deep dive into Claude Code pricing, and show real-world differences in Claude Code VSCode usage versus Cursor Claude Code implementations. Whether you're exploring Claude Code hooks or just figuring out how to use Claude Code for the first time, this walkthrough will save you hours.
+
+We even compare Claude Code Pro with tools like Gemini CLI, Cursor AI, and Augment Code to help you understand what makes Claude shine in real dev environments. If you’ve been using Claude Code on Windows or are new to tools like Claude Code Monitor or Claude Code MCP, you’ll get a full working setup here.
+
+This isn't just another Claude Code tutorial—it’s your go-to Claude Code review for real-world projects and a full breakdown of Claude Code cursor setups, terminal workflows, and Claude Code in Cursor integrations. We also touch on cursor vs Claude Code tradeoffs, Claude Code for VSCode developers, and what makes Claude Code workflows so efficient.
+
+Whether you’re into prompt engineering, coding with AI agents, or exploring powerful AI tools like Claude, Gemini CLI, Grok 4, Midjourney, or ChatGPT—this is part of the bigger picture of building smarter and faster with AI.
+
+#claude code #ai coding #ai #grok 4 #gemini cli #chatgpt #ai agents #vibe coding #midjourney #cursor #cursor ai #prompt engineering #mcp #make money online #ai agent #openai #coding #ai tools
+How this content was made
+Auto-dubbed
+Audio tracks for some languages were automatically generated. Learn more
+Transcript
+Follow along using the transcript.
+
+
+Show transcript
+
+AI LABS
+71.8K subscribers
+Videos
+About
+
+Discord Commuity
+
+Facebook
+
+Instagram
+
+LinkedIn
+80 Comments
+Send Junk
+Add a comment...
+
+Pinned by @AILABS-393
+@AILABS-393
+12 days ago (edited)
+🔗 Join Our AI Hackathon
+Get involved in our latest AI Hackathon here:
+https://discord.gg/s4h9g7PXXy?event=1399333006245892196
+
+ Save an extra 20% on SCRIMBA with the link below:
+Link: https://scrimba.com/home?via=ailabs
+
+ Work With Us
+•⁠  ⁠ Need automation, AI systems, or software built?
+Our parent builder company Autometa takes on full dev & consulting work.
+→ Book a call with Autometa: https://autometa.dev/booking
+•⁠  ⁠ Business inquiries related to this video?
+→ Reach us at: contact@autometa.dev
+
+ Connect With Us
+Instagram → https://www.instagram.com/ailabs_393/
+X (Twitter) → https://x.com/ai_labs393
+LinkedIn → https://www.linkedin.com/company/107925167
+Facebook → https://www.facebook.com/people/AI-Labs/61567670378819/
+Discord → https://discord.gg/S2hD7b28Qy
+Website → https://ailabs393.com/
+
+1
+
+
+Reply
+
+
+@legendarystuff6971
+12 days ago
+This is becoming the best practical channel in AI coding. I like that you post when you have valuable things to share. All the others I subscribed to had a couple of good videos at the start and after a while they all started posting slop, hype video, latest buzzwords, shocked face in the thumbnail, the works. Thanks for the amazing work you do 
+
+27
+
+
+Reply
+
+
+1 reply
+
+@handleking1
+12 days ago
+It would be great to show a before and after token usage demo to see how much it saved on the same prompt and the same implementation.
+
+19
+
+
+Reply
+
+
+@seekrofnothing
+3 days ago
+this really breaks it all down i’ve been switching between claude code and cursor too and tracking prompt logic with genum ai has helped a ton especially when testing different setups across tools without losing context
+
+
+
+Reply
+
+
+@michaellatta
+12 days ago
+The Anthropocene people said they did not use vector search on code bases because it was more work keeping it current, and privacy issues with having the code in a second place.
+
+6
+
+
+Reply
+
+
+@sjkba
+12 days ago
+Great video, horrible title. Almost didn't watch. How about "MCP Language Server to boost Claude Code Context Management"?
+
+47
+
+
+Reply
+
+
+6 replies
+
+@AIAppMasters
+7 days ago
+Digging this. respect for the pro‑level share.
+
+1
+
+
+Reply
+
+
+@Fatihkocakjoyboy
+12 days ago
+I love your videos! Thank you so much for providing value. I got a video suggestion if you don’t mind. A video which explains all the basics of Claude for example what a mcp is. Like the ABCs of Claude Code. Anthropic did a great job recently on their website providing training for people. That just in Video basically would be a great starting point for so many people.
+
+
+
+Reply
+
+
+@hstn-zh
+11 days ago
+Hi nice videos again! Please upload other claude code videos to this playlist as well.
+
+
+
+Reply
+
+
+@autofires
+12 days ago
+Before doing any/all of this just put Claude in plan mode (shift tab), tag 1 or two files and you'll very probably be fine. Also get a pro account and forget about tokens.
+
+6
+
+
+Reply
+
+
+@Mistrals60
+12 days ago
+If I could only give this more than one thumbs up. Keep the really great content coming. You are fantastic!
+
+
+
+Reply
+
+
+@tomfreeman3161
+11 days ago
+ $1.99
+Thanks!
+
+
+
+Reply
+
+
+@EDashMan
+12 days ago
+Doesn’t cursor already do semantic search though
+
+7
+
+
+Reply
+
+
+@ixixixiixixixi3171
+11 days ago
+Stunning! Love it. Thx
+
+
+
+Reply
+
+
+@Tsardoz
+10 days ago
+Fantastic stuff. Maybe Claude Code is worth it now. Subscribed. If all your content is as good as this ...
+
+
+
+Reply
+
+
+@carlosburgoin2262
+11 days ago
+PRO TIP: inject the serena prompt in claude system's prompt, otherwise it will stop using mcp tools after compact (very likely, although not always)
+
+1
+
+
+Reply
+
+
+1 reply
+
+@blarvinius
+12 days ago
+Your content is excellent .
+
+
+
+Reply
+
+
+@Cpt9000
+11 days ago
+Or just use Augment code. It indexes your code and is super fast and accurate. It also used Claude 4/latest.
+
+
+
+Reply
+
+
+@RohiniBragta-u4n
+12 days ago
+thanks for sharing!
+
+
+
+Reply
+
+
+@benarcher372
+12 days ago
+I liked the Usage Monitor too!
+
+
+
+Reply
+
+    
+Transcript
+
+
+Search in video
+0:00
+What if I told you that your Claude code
+0:02
+is probably working at 30% of its true
+0:04
+potential right now? Every time you ask
+0:06
+Claude to edit a component or fix a bug,
+0:09
+it's drowning in unnecessary
+0:10
+information, reading through thousands
+0:12
+of lines of code it doesn't need,
+0:14
+processing files that have nothing to do
+0:16
+with your request. This isn't just
+0:17
+slowing Claude down. It's actively
+0:19
+making it less accurate. when the
+0:21
+context window is cluttered with
+0:22
+irrelevant code. Claude has to work
+0:24
+harder to find what actually matters and
+0:26
+that leads to mistakes, missed
+0:28
+connections, and sub-optimal solutions.
+0:30
+But here's the thing, there's a
+0:31
+completely free way to make Claude laser
+0:33
+focused on exactly what it needs. And
+0:35
+I'm about to show you how. Before I tell
+0:37
+you how I'm going to optimize Claude
+0:39
+code, let me give you a quick intro on
+0:41
+how Claude code actually works and the
+0:43
+problem we're going to solve with this
+0:45
+tool I'm about to show you. As you can
+0:47
+see, I'm initializing Claude and I've
+0:49
+already made a prototype here, an HTML
+0:51
+prototype. When I tell it that I want to
+0:53
+make the HTML prototype better, it needs
+0:55
+to find ways to improve the design and
+0:58
+make it look nicer. When I give it this
+1:00
+message, since this is a new session, it
+1:02
+has no context of what's already in the
+1:04
+session. So, it's going to read through
+1:06
+everything. By doing that, it's not only
+1:08
+using up our tokens, but it's also
+1:10
+filling the context window with
+1:11
+potentially irrelevant information. When
+1:13
+the context window gets cluttered with
+1:15
+unnecessary data, it directly impacts
+1:18
+Claude's performance. It has to process
+1:20
+all that information even when most of
+1:22
+it isn't relevant to the current task.
+1:24
+This isn't just about hitting usage
+1:25
+limits. It's about efficiency and
+1:27
+accuracy. Another way Claw doesn't have
+1:29
+to read through all of this is if it
+1:31
+already knows the context of the
+1:33
+codebase, what's inside the code, and it
+1:35
+only targets the files that actually
+1:37
+contain the code it needs to edit. This
+1:40
+is a simple example because right now
+1:42
+there's only a single HTML file that
+1:44
+it's editing. But imagine if it were a
+1:46
+whole Nex.js project and I asked it to
+1:48
+edit a login component. It would have to
+1:50
+list the directory, read different
+1:52
+files, and figure out where the
+1:54
+component was that needed editing. Even
+1:56
+that component example is simple. What
+1:58
+if there were a random error and it had
+2:00
+to check every single file because it
+2:02
+didn't know how the codebase was
+2:03
+structured, what context it had, or what
+2:05
+was inside it. Not only would this
+2:07
+consume tokens, but it would also
+2:09
+degrade performance as claude tries to
+2:11
+maintain context of all these files
+2:13
+simultaneously. You might say that we
+2:15
+could improve this by using the
+2:16
+claude.md, which is basically the
+2:18
+codebase documentation. And yes, you'd
+2:20
+be right. If you wrote out everything
+2:22
+about the codebase inside the claw.md,
+2:25
+then claude wouldn't have to read
+2:26
+everything and you'd save some tokens.
+2:28
+But still, it has to read through the
+2:30
+entire markdown file, and that's still
+2:32
+filling up the context window with
+2:34
+potentially unnecessary information.
+2:36
+There are different types of searches.
+2:37
+One is textual search where a model like
+2:39
+Claude searches through the text it's
+2:41
+been given like the text in the
+2:42
+claude.md file. Then there's semantic
+2:45
+search which is much faster, more
+2:47
+accurate and most importantly only
+2:49
+returns the relevant pieces of
+2:51
+information. The context 7 MCP uses
+2:53
+semantic search and it gives you
+2:55
+up-to-date documentation for all the
+2:57
+libraries you see right here. The reason
+2:59
+tools like context 7 are so effective is
+3:01
+because they use this semantic search
+3:03
+approach. For example, if I tell it that
+3:05
+I need to implement a feature from
+3:06
+Nex.js, it first finds the Nex.js
+3:09
+library. Then when it needs to get the
+3:11
+library docs, whatever issue I'm facing
+3:13
+with Nex.js, it doesn't search through
+3:15
+the entire documentation. It uses
+3:17
+semantic search to get only the relevant
+3:19
+pieces of information that it needs.
+3:21
+This becomes much faster and more
+3:23
+accurate. The agent only gets the
+3:25
+context it truly needs. It doesn't have
+3:27
+to wade through irrelevant information
+3:29
+to figure out what you're trying to
+3:31
+accomplish. This focused context window
+3:33
+dramatically improves Claude's
+3:35
+performance and accuracy. This is called
+3:36
+rag and this can be applied to your
+3:38
+codebase as well. Think of it this way.
+3:40
+What if Claude already knew everything
+3:42
+about your codebase and could use
+3:44
+semantic search instead of textual
+3:46
+search? Whether your codebase is 100,000
+3:49
+lines or larger? What if Claude could
+3:51
+automatically find exactly what it needs
+3:53
+and pull only the most relevant pieces
+3:55
+of information into the context window?
+3:57
+That is what the Serena MCP does. It
+4:00
+knows everything about your code and
+4:02
+uses semantic search. So, it's much
+4:04
+faster and more performant. By keeping
+4:06
+the context window lean and relevant,
+4:08
+Claude can work more efficiently and
+4:10
+provide better results. It's honestly
+4:12
+been a gamecher. Since it's an MCP
+4:14
+server, it's not only constrained to
+4:16
+claude code. It can also be used with
+4:18
+other MCP clients like Cursor or
+4:21
+Windsurf. Personally, I like Claude code
+4:23
+because the models there aren't
+4:25
+restricted to a limited token window.
+4:27
+they get their full context windows
+4:29
+inside clawed code. This is opposed to
+4:31
+cursor where it's limited to 120,000
+4:34
+instead of the full 200,000. Even if you
+4:36
+do use cursor, this is still an amazing
+4:38
+tool for you. The reason is because of
+4:40
+cursor switch to their new pricing model
+4:42
+where they now give you a set usage of
+4:44
+the model. After you've used up your
+4:46
+credits, you switch to a pay as you go
+4:48
+model and start paying instead of using
+4:50
+their included credits. Installing it is
+4:52
+pretty easy. You just have to scroll
+4:54
+down until you reach the claude code
+4:56
+section. And in there, you're going to
+4:58
+find these two commands. You'll copy the
+5:00
+second one and go back into your
+5:02
+terminal. You need to install it in
+5:03
+whichever directory you want to use this
+5:05
+MCP server because it's specific to the
+5:08
+directory. If you initialize a new
+5:09
+directory with cloud code inside it, the
+5:11
+MCP server won't be present there. So,
+5:14
+you have to install it in every
+5:15
+directory where you want to use cloud
+5:17
+code. After you do that, you just paste
+5:19
+the command and this will automatically
+5:21
+add the MCP server to Claude Code
+5:23
+settings for you. Then when you fire up
+5:25
+Claude Code and navigate to the MCP
+5:28
+section, you're going to see that now
+5:29
+the Serena MCP is connected with a check
+5:32
+mark that says the connection is valid.
+5:34
+Another thing that the author has
+5:35
+provided with Serena is this dashboard.
+5:38
+The dashboard provides logs for the MCP
+5:40
+server. In addition to logs, a feature
+5:42
+the author personally likes is the
+5:44
+ability to shut down the server for
+5:46
+proper cleanup. And the functionality
+5:48
+there is pretty great, too. For example,
+5:50
+when you're done with the MCP server,
+5:52
+you can just go to this web UI and press
+5:55
+the shutdown button and it'll shut it
+5:57
+down. If I navigate back, you can see
+5:59
+that now the Serena MCP appears with a
+6:01
+crossark, which means the connection is
+6:03
+now cut off. To initialize it again,
+6:05
+I'll just exit Claude Code and
+6:07
+reinitialize it in the same directory.
+6:09
+Whenever I launch Claude Code again
+6:11
+after exiting, it'll automatically
+6:13
+launch Serena and bring up its dashboard
+6:15
+as well and I'll be able to view it.
+6:17
+Before we go further into this MCP, I
+6:19
+want to show you another tool that I've
+6:21
+been using with Claude Code. This tool
+6:23
+has also helped me optimize my Claude
+6:25
+code usage in a really nice way. The
+6:27
+tool I'm talking about is the Claude
+6:28
+Code usage monitor. It lets you track
+6:31
+your Claude code usage. As you can see,
+6:32
+I'm on the Pro plan right now. The Pro
+6:34
+plan works in 5-hour windows, so your
+6:37
+limit resets every 5 hours. And the time
+6:39
+remaining in this reset is 2 hours and
+6:41
+53 minutes. We also have other trackers,
+6:44
+cost usage, token usage, and message
+6:46
+usage. As you can see here, I'm using
+6:48
+clawed code right now, which is why the
+6:50
+message usage is actively increasing.
+6:52
+There's also model distribution.
+6:53
+Currently, there are only two models
+6:55
+listed here. And since I'm on the pro
+6:57
+plan and not on the max plan, it's 100%
+7:00
+the sonnet model. This helps me track my
+7:02
+claw code usage. It helps me optimize
+7:04
+how I use it by showing the reset timer
+7:06
+and alerting me when I'm getting close
+7:08
+to my message limit. That way, I adjust
+7:10
+my usage depending on how many messages
+7:12
+I have left. Another important point is
+7:14
+that it's right here in my terminal in
+7:16
+another tab. I don't have to use those
+7:18
+UIs built on top of Claude Code like
+7:21
+Claudia or the Claude Code web UI, which
+7:23
+are good, but I prefer using it in my
+7:25
+terminal. It just suits me better.
+7:27
+Installing it is pretty easy as well.
+7:29
+I'll leave the GitHub link down below,
+7:31
+but it's just one command. You need to
+7:33
+have that installed on your system. And
+7:35
+after that, you just copy and paste the
+7:37
+command. It'll install it. In my case,
+7:39
+it's already installed, and I can just
+7:40
+launch it with this command, and the
+7:42
+Claude code monitor will appear right
+7:44
+here. I found that this usage monitor is
+7:46
+far better than others. For example,
+7:48
+there's CC usage as well. I've tried it,
+7:50
+but it wasn't tracking my messages and
+7:52
+usage correctly. But ever since I
+7:54
+switched over to this clawed code usage
+7:56
+monitor, it's been really nice. Over on
+7:58
+the AIS Discord community, we're hosting
+8:01
+our first ever hackathon from July 22nd
+8:03
+to July 28th. Submit your most
+8:06
+interesting builds and projects, and the
+8:07
+top five submissions will be featured in
+8:10
+one of our YouTube videos. You can join
+8:12
+by clicking the link in the pinned
+8:13
+comment below. And if you're enjoying
+8:15
+the content so far, make sure to hit
+8:17
+that subscribe button so you don't miss
+8:18
+what's coming next. Now, coming back to
+8:20
+the tool, the first thing you're going
+8:22
+to do is actually exit Claude Code so
+8:24
+you can initialize the indexing in your
+8:26
+own project. And for that, you basically
+8:28
+have two commands. We're going to use
+8:30
+the first command because we installed
+8:31
+the MCP server using UV. We're not
+8:34
+running it locally. So, just copy that
+8:36
+command, head back into the folder where
+8:38
+you've installed the MCP server, and run
+8:40
+it. You'll see that it indexes the
+8:42
+project. It also gives an error saying
+8:44
+that this command is deprecated and
+8:46
+suggests using another one instead, but
+8:48
+this one still works. It's only a matter
+8:49
+of time before they update the readme.
+8:51
+You can find this command in the GitHub
+8:53
+documentation, too. I'll link it down
+8:55
+below. Another important thing you need
+8:57
+to know is that indexing works only for
+8:59
+certain programming languages. So if you
+9:02
+only have HTML in your project, it
+9:04
+probably won't work. And honestly, you
+9:06
+won't even need it. But for other
+9:08
+applications like Nex.js using
+9:10
+TypeScript or the one I've initialized
+9:12
+in this folder, which is just a demo
+9:14
+Python app I created to test indexing,
+9:16
+it will work with those. Once it's been
+9:18
+indexed, you can just go ahead and type
+9:20
+out Claude. And before actually
+9:22
+continuing with Claude, you'll need to
+9:24
+give it some instructions. Basically
+9:26
+telling it how to properly use the MCP.
+9:29
+This gives Claude code the context it
+9:31
+needs to know how to interact with the
+9:32
+tool. And as you can see, it's read the
+9:34
+instructions and now it knows what tools
+9:36
+are available and how to use them. It
+9:38
+even picked up on some key principles on
+9:40
+how to apply them. So now whenever I'm
+9:42
+requesting edits, like in this task I
+9:44
+gave it, which involves both the Python
+9:46
+files and the UI, it's no longer going
+9:48
+to explore the entire codebase blindly.
+9:50
+it's actually going to use the tool,
+9:52
+fetch the appropriate data, and only
+9:54
+bring the specific parts it needs into
+9:56
+the context window. This focused
+9:58
+approach significantly improves
+10:00
+performance because Claude is working
+10:01
+with exactly what's relevant, not
+10:03
+wasting processing power on unnecessary
+10:06
+files. This way, you'll not only save
+10:08
+tokens, but also get much better
+10:10
+performance from Claude. The cleaner
+10:12
+context window means faster, more
+10:14
+accurate responses. And from my
+10:15
+experience, you can easily stay within
+10:17
+your message limit during your 5-hour
+10:19
+window while getting much more done.
+10:21
+That brings us to the end of this video.
+10:23
+If you'd like to support the channel and
+10:25
+help us keep making videos like this,
+10:27
+you can do so by using the super thanks
+10:29
+button below. As always, thank you for
+10:31
+watching and I'll see you in the next
+
+
+Gemini in Gmail
+Sponsored
+workspace.google.com
+Sign up
+
+
+All
+
+From the series
+
+From AI LABS
+
+AI
+
+Learning
+
+Related
+
+
+AI Agent Handbook
+Learn how AI agents are streamlining workflows and improving customer satisfaction.
+Sponsored
+NiCE
+
+Download
+Shorts
+
+Crate Climbing
+27M views
+
+
+MCP Protocol Is Changing Everything | The Secret Behind Scalable AI Agents #MCP #AiAgent #LLM
+99K views
+
+
+Dana Carvey can’t stop Chris Farley making Adam Sandler laugh 90s SNL was funny #shorts .
+140K views
+
+Christopher Walken saves Will Ferrell with a pot roast - classic SNL sketch #comedy #funny #shorts
+1.9M views
+
+This is what men look at #shorts
+5.9M views
+
+Blowing Up A Huge Balloon With A Single Breath?
+15M views
+
+
+
+11:31
+How I ACTUALLY Use Claude Code... My Complete Workflow
+AI LABS
+51K views
+•
+2 days ago
+New
+
+
+17:09
+5 Claude Code MCP Servers You Need To Be Using
+Sean Kochel
+33K views
+•
+10 days ago
+
+
+5:26
+Three Daughters - SNL
+Saturday Night Live
+8.1M views
+•
+3 years ago
+
+
+10:00
+Google’s New Self Improving AI Agent Just Crushed OpenAI’s Deep Research
+AI Revolution
+25K views
+•
+12 hours ago
+New
+
+
+13:52
+Claude Code MCP Serena: Stop Wasting Tokens on Website Bugs (Tutorial)
+AI Business Lab
+1.6K views
+•
+6 days ago
+New
+
+
+6:54
+Claude Code NEW Sub Agents in 7 Minutes
+Developers Digest
+51K views
+•
+9 days ago
+
+
+11:41
+Google OPAL Just Dropped: And It’s About to Go Viral
+AI Revolution
+87K views
+•
+8 days ago
+
+
+11:57
+Hardest Lesson My Son Ever Learned
+Josh Wolf
+1.2M views
+•
+2 years ago
+
+
+18:14
+Ex-OpenAI Scientist WARNS: "You Have No Idea What's Coming"
+AI Upload
+1.4M views
+•
+2 weeks ago
+
+
+9:28
+This n8n mcp is INSANE... Let AI Create your Entire Automation
+AI LABS
+146K views
+•
+4 weeks ago
+
+
+18:44
+I was using Claude Code wrong... The Ultimate Workflow
+AI Jason
+86K views
+•
+10 days ago
+
+21:08
+In Rattlesnake Canyon the snakes are the least of your worries (*MATURE AUDIENCES*)
+MrBallen
+3.9M views
+•
+1 year ago
+
+6:39
+Cut for Time: College Admissions - SNL
+Saturday Night Live
+11M views
+•
+6 years ago
+
+11:09
+Why MCP really is a big deal | Model Context Protocol with Tim Berglund
+Confluent Developer
+416K views
+•
+2 months ago
+
+13:36
+Time to SCALE... 90% of AI Coding is Unnecessary Now
+AI LABS
+73K views
+•
+8 days ago
+
+13:19
+Don't do RAG - This method is way faster & accurate...
+AI Jason
+139K views
+•
+4 months ago
+
+8:21
+Create Beautiful UI with Claude Code
+Developers Digest
+23K views
+•
+13 days ago
+
+12:34
+5 secret Claude Code features you need to know about
+Alex Finn
+6.6K views
+•
+8 days ago
+
+8:08
+Claude's Model Context Protocol is here... Let's test it
+Fireship
+1.1M views
+•
+4 months ago
+
+11:28
+Chinese Open-Source DOMINATES Coding (GLM-4.5)
+Matthew Berman
+67K views
+•
+4 days ago
+New
+
+    
+

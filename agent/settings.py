@@ -28,13 +28,17 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Mapping
-from pydantic_settings import BaseSettings, SettingsConfigDict
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    from pydantic import BaseSettings
+    SettingsConfigDict = dict
 from pydantic import Field, model_validator
 
 class LLMSettings(BaseSettings):
     """Settings related to the LLM provider."""
     model_config = SettingsConfigDict(env_prefix="TALK_LLM_", extra="ignore")
-    provider: str = "google"
+    provider: str = "anthropic"
 
 class GoogleSettings(BaseSettings):
     """Settings specific to the Google LLM provider."""
@@ -43,10 +47,19 @@ class GoogleSettings(BaseSettings):
     project: str = ""
     location: str = ""
 
+class AnthropicSettings(BaseSettings):
+    """Settings specific to the Anthropic LLM provider."""
+    model_config = SettingsConfigDict(env_prefix="TALK_ANTHROPIC_", extra="ignore")
+    model_name: str = "claude-3-5-sonnet-20241022"
+    api_key: str = ""
+    max_tokens: int = 4000
+    temperature: float = 0.7
+
 class ProviderSettings(BaseSettings):
     """Container for all provider-specific settings."""
     model_config = SettingsConfigDict(extra="ignore")
     google: GoogleSettings = GoogleSettings()
+    anthropic: AnthropicSettings = AnthropicSettings()
 
 class PathSettings(BaseSettings):
     """Settings for file system paths."""
@@ -55,10 +68,10 @@ class PathSettings(BaseSettings):
     
     # Centralized output directory structure
     output_root: Path = Field(
-        default_factory=lambda: Path("output").resolve()
+        default_factory=lambda: Path.cwd() / ".talk"
     )
     logs_dir: Path = Field(
-        default_factory=lambda: Path("output/logs").resolve()
+        default_factory=lambda: Path.cwd() / ".talk" / "logs"
     )
 
     @model_validator(mode="after")
@@ -118,11 +131,30 @@ class Settings(BaseSettings):
         # This allows tests or users to force a specific model globally, which is
         # simpler and more reliable than patching agent instances.
         if fm_env := os.getenv("TALK_FORCE_MODEL"):
-            # This logic assumes the provider is 'google', which is the default.
-            # A more complex app might check `base["llm"]["provider"]` first.
-            if "google" not in base["provider"]:
-                base["provider"]["google"] = {}
-            base["provider"]["google"]["model_name"] = fm_env
+            # Auto-detect provider based on model name
+            if "claude" in fm_env.lower():
+                # Claude models use Anthropic provider
+                base["llm"]["provider"] = "anthropic"
+                if "anthropic" not in base["provider"]:
+                    base["provider"]["anthropic"] = {}
+                base["provider"]["anthropic"]["model_name"] = fm_env
+            elif "gemini" in fm_env.lower() or "flash" in fm_env.lower():
+                # Gemini models use Google provider
+                base["llm"]["provider"] = "google"
+                if "google" not in base["provider"]:
+                    base["provider"]["google"] = {}
+                base["provider"]["google"]["model_name"] = fm_env
+            elif "gpt" in fm_env.lower():
+                # GPT models use OpenAI provider
+                base["llm"]["provider"] = "openai"
+                if "openai" not in base["provider"]:
+                    base["provider"]["openai"] = {}
+                base["provider"]["openai"]["model_name"] = fm_env
+            else:
+                # Default to google for unknown models
+                if "google" not in base["provider"]:
+                    base["provider"]["google"] = {}
+                base["provider"]["google"]["model_name"] = fm_env
             
         return cls(**base)
 

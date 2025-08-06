@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
+import subprocess
 
 from agent.agent import Agent
 
@@ -33,7 +34,8 @@ class TestAgent(Agent):
     
     This agent executes test commands, captures output and results,
     and formats them in a structured way. It supports different test
-    runners like pytest and unittest.
+    runners like pytest and unittest. It also detects missing dependencies
+    and test frameworks.
     """
     
     def __init__(
@@ -88,8 +90,23 @@ class TestAgent(Agent):
             # Parse the input to get test configuration
             config = self._parse_input(input_text)
             
+            # Check if test framework is available
+            framework_check = self._check_test_framework(config["runner"])
+            if not framework_check["available"]:
+                return self._format_dependency_error(
+                    "test_framework",
+                    config["runner"],
+                    framework_check["install_command"]
+                )
+            
             # Run the tests and get results
             result = self._run_tests(config)
+            
+            # Check for dependency errors in output
+            if self._has_dependency_errors(result):
+                missing_deps = self._extract_missing_dependencies(result)
+                if missing_deps:
+                    result = self._enhance_with_dependency_info(result, missing_deps)
             
             # Record the result
             self._append("assistant", result)
@@ -464,3 +481,177 @@ class TestAgent(Agent):
                 config["args"] = [f"{test_path}.{test_name}"]
         
         return self._run_tests(config)
+    
+    def _check_test_framework(self, runner: str) -> Dict[str, Any]:
+        """
+        Check if the test framework is available.
+        
+        Args:
+            runner: The test runner to check
+            
+        Returns:
+            Dictionary with availability status and install command
+        """
+        # Define how to check and install each runner
+        runner_info = {
+            "pytest": {
+                "check_command": ["python", "-m", "pytest", "--version"],
+                "install_command": "pip install pytest"
+            },
+            "unittest": {
+                "check_command": ["python", "-c", "import unittest"],
+                "install_command": "Built-in Python module"
+            },
+            "nose": {
+                "check_command": ["nosetests", "--version"],
+                "install_command": "pip install nose"
+            },
+            "django": {
+                "check_command": ["python", "-c", "import django"],
+                "install_command": "pip install django"
+            }
+        }
+        
+        info = runner_info.get(runner, {
+            "check_command": [runner, "--version"],
+            "install_command": f"Install {runner} manually"
+        })
+        
+        try:
+            result = subprocess.run(
+                info["check_command"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(self.base_dir)
+            )
+            available = result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            available = False
+        
+        return {
+            "available": available,
+            "runner": runner,
+            "install_command": info["install_command"]
+        }
+    
+    def _has_dependency_errors(self, output: str) -> bool:
+        """
+        Check if the output contains dependency-related errors.
+        
+        Args:
+            output: Test output to check
+            
+        Returns:
+            True if dependency errors are found
+        """
+        error_patterns = [
+            "ModuleNotFoundError",
+            "ImportError",
+            "No module named",
+            "Cannot find module",
+            "Unable to import",
+            "Package .* not found"
+        ]
+        
+        for pattern in error_patterns:
+            if re.search(pattern, output, re.IGNORECASE):
+                return True
+        
+        return False
+    
+    def _extract_missing_dependencies(self, output: str) -> List[str]:
+        """
+        Extract missing dependency names from test output.
+        
+        Args:
+            output: Test output containing errors
+            
+        Returns:
+            List of missing package names
+        """
+        missing = []
+        
+        # Python module errors
+        python_patterns = [
+            r"ModuleNotFoundError: No module named '([^']+)'",
+            r"ImportError: cannot import name '([^']+)'",
+            r"ImportError: No module named '?([^'\s]+)'?"
+        ]
+        
+        for pattern in python_patterns:
+            matches = re.findall(pattern, output)
+            missing.extend(matches)
+        
+        # JavaScript/Node errors
+        js_patterns = [
+            r"Cannot find module '([^']+)'",
+            r"Module not found: Error: Can't resolve '([^']+)'"
+        ]
+        
+        for pattern in js_patterns:
+            matches = re.findall(pattern, output)
+            missing.extend(matches)
+        
+        # Clean up and deduplicate
+        cleaned = []
+        for dep in missing:
+            # Remove any .py extensions
+            dep = dep.replace('.py', '')
+            # Take only the first part of dotted imports
+            dep = dep.split('.')[0]
+            if dep and dep not in cleaned:
+                cleaned.append(dep)
+        
+        return cleaned
+    
+    def _format_dependency_error(self, error_type: str, package: str, 
+                                 install_cmd: str) -> str:
+        """
+        Format a dependency error message.
+        
+        Args:
+            error_type: Type of dependency error
+            package: Package name that's missing
+            install_cmd: Command to install the package
+            
+        Returns:
+            Formatted error message
+        """
+        result = {
+            "success": False,
+            "error_type": "DEPENDENCY_ERROR",
+            "missing": package,
+            "install_command": install_cmd,
+            "message": f"{package} is not installed"
+        }
+        
+        output = f"DEPENDENCY_ERROR: {package} not available\n"
+        output += f"Install command: {install_cmd}\n\n"
+        output += f"JSON_RESULT: {json.dumps(result, indent=2)}\n"
+        
+        return output
+    
+    def _enhance_with_dependency_info(self, result: str, missing_deps: List[str]) -> str:
+        """
+        Add dependency information to test results.
+        
+        Args:
+            result: Original test result
+            missing_deps: List of missing dependencies
+            
+        Returns:
+            Enhanced result with dependency information
+        """
+        # Add dependency info to the beginning
+        dep_info = "\nDEPENDENCY_ERROR: Missing packages detected\n"
+        dep_info += "Missing packages: " + ", ".join(missing_deps) + "\n"
+        
+        # Suggest install commands based on file type
+        if any(self.base_dir.glob("*.py")):
+            dep_info += f"Suggested fix: pip install {' '.join(missing_deps)}\n"
+        elif any(self.base_dir.glob("*.js")) or any(self.base_dir.glob("*.ts")):
+            dep_info += f"Suggested fix: npm install {' '.join(missing_deps)}\n"
+        
+        # Insert at the beginning of the result
+        return dep_info + "\n" + result

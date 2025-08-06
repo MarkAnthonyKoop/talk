@@ -83,6 +83,10 @@ class TalkOrchestrator:
         self.resume_session = resume_session
         self.enable_web_search = enable_web_search
         
+        # Set the model via environment variable for global override
+        if model:
+            os.environ["TALK_FORCE_MODEL"] = model
+        
         # Initialize output manager
         self.output_manager = OutputManager()
         
@@ -618,7 +622,9 @@ def main():
     """Parse command line arguments and run the Talk orchestrator."""
     # Get default model from settings
     settings = Settings.resolve()
-    default_model = settings.provider.google.model_name
+    # Get the default model from the current provider
+    provider_settings = settings.get_provider_settings()
+    default_model = provider_settings.model_name
     
     parser = argparse.ArgumentParser(
         description="Talk - Multi-agent orchestration system for autonomous code generation"
@@ -659,21 +665,63 @@ def main():
         help="Disable web search for research tasks",
         action="store_true"
     )
+    parser.add_argument(
+        "--enhance",
+        help="Enhancement mode: improve the Talk framework itself (adds new agents, features, etc.)",
+        action="store_true"
+    )
+    parser.add_argument(
+        "words",
+        nargs="*",
+        help="Task description as positional arguments (alternative to --task)"
+    )
     
     args = parser.parse_args()
     
-    # Get task from arguments or prompt the user (unless resuming)
-    task = args.task
-    if not task and not args.resume:
-        task = input("Enter task description: ")
-        if not task:
-            print("Error: Task description is required (unless resuming)")
+    # Handle enhancement mode
+    if args.enhance:
+        # In enhance mode, ignore --task flag and use positional args for enhancement description
+        enhancement_request = " ".join(args.words) if args.words else ""
+        if not enhancement_request and not args.resume:
+            enhancement_request = input("Enter enhancement description (what would you like to improve about Talk?): ")
+        
+        if enhancement_request:
+            task = f"""Enhance the Talk framework by: {enhancement_request}
+
+Focus on improving the Talk multi-agent system located in /home/xx/code/. This includes:
+- Adding new specialized agents in the special_agents/ directory
+- Improving existing agents and their capabilities  
+- Enhancing the core framework in agent/ and talk/ directories
+- Adding new features and integrations
+- Improving the orchestration and communication between agents
+
+Please analyze the existing codebase structure and implement the requested enhancement while maintaining compatibility with the current architecture."""
+        elif args.resume:
+            task = None  # Will be loaded from resume session
+        else:
+            print("Error: Enhancement description is required")
             return 1
+    else:
+        # Get task from arguments - either from --task flag or positional arguments
+        task = args.task
+        if not task and args.words:
+            # Join all positional arguments into a single task description
+            task = " ".join(args.words)
+        if not task and not args.resume:
+            task = input("Enter task description: ")
+            if not task:
+                print("Error: Task description is required (unless resuming)")
+                return 1
     
     # Create and run the orchestrator
+    # In enhancement mode, default working directory to the Talk framework root
+    working_dir = args.dir
+    if args.enhance and not working_dir and not args.resume:
+        working_dir = "/home/xx/code"
+    
     orchestrator = TalkOrchestrator(
         task=task,
-        working_dir=args.dir,
+        working_dir=working_dir,
         model=args.model,
         timeout_minutes=args.timeout,
         interactive=args.interactive,

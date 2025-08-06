@@ -15,8 +15,8 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from blackboard import Blackboard
-from output_manager import OutputManager
+from plan_runner.blackboard import Blackboard
+from agent.output_manager import OutputManager
 from plan_runner.step import Step
 from plan_runner.plan_runner import PlanRunner
 
@@ -25,7 +25,6 @@ from special_agents.assessor_agent import AssessorAgent, TaskComplexity
 from special_agents.code_agent import CodeAgent
 from special_agents.file_agent import FileAgent
 from special_agents.test_agent import TestAgent
-from special_agents.shell_agent import ShellAgent
 from special_agents.web_search_agent import WebSearchAgent
 
 # Import new orchestration components
@@ -201,7 +200,7 @@ class DynamicTalkOrchestrator:
             "coder": CodeAgent,
             "file": FileAgent,
             "tester": TestAgent,
-            "shell": ShellAgent,
+            "shell": None,  # ShellAgent has import issues
             "researcher": WebSearchAgent,
             # Add more agent mappings as they're created
             "critic": None,  # Placeholder

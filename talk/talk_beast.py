@@ -370,7 +370,13 @@ Proceed with your specialized role in this coordinated effort."""
                     return True
         
         # If no completion verifier ran, do basic check
-        return len(list(self.working_dir.rglob("*"))) >= 3  # At least 3 files created
+        files_created = len(list(self.working_dir.rglob("*"))) if self.working_dir.exists() else 0
+        
+        # For simple tasks, even 1 file is success
+        if self.assessment.get("complexity") == TaskComplexity.SIMPLE:
+            return files_created >= 1
+        
+        return files_created >= 3  # For complex tasks
     
     def _victory_summary(self):
         """Show victory summary."""
@@ -457,7 +463,7 @@ Proceed with your specialized role in this coordinated effort."""
         session_data = {
             "task": self.task,
             "model": self.model,
-            "complexity": self.assessment.get("complexity", {}).get("value", "unknown"),
+            "complexity": self.assessment.get("complexity").value if self.assessment.get("complexity") else "unknown",
             "agents_deployed": len(self.agents),
             "workflow_steps": len(self.plan),
             "duration": time.time() - self.start_time,

@@ -1,0 +1,320 @@
+{
+  "architecture": {
+    "project_structure": {
+      "directories": [
+        "dataset",
+        ".git",
+        "assets",
+        "config",
+        "utils",
+        "models",
+        ".vscode",
+        "raw-data",
+        "ARC-AGI-2",
+        "ARC-AGI",
+        "ConceptARC",
+        "branches",
+        "hooks",
+        "objects",
+        "info",
+        "refs",
+        "logs",
+        "27",
+        "06",
+        "7c",
+        "ad",
+        "a5",
+        "d7",
+        "b4",
+        "b0",
+        "8c",
+        "51",
+        "bd",
+        "fb",
+        "df",
+        "79",
+        "64",
+        "24",
+        "3b",
+        "bc",
+        "pack",
+        "37",
+        "a9",
+        "9b",
+        "40",
+        "00",
+        "2e",
+        "36",
+        "4f",
+        "8a",
+        "4e",
+        "71",
+        "2d",
+        "7a",
+        "87",
+        "3f",
+        "dc",
+        "b2",
+        "1d",
+        "info",
+        "23",
+        "e8",
+        "26",
+        "b1",
+        "5d",
+        "1a",
+        "7b",
+        "c7",
+        "19",
+        "e6",
+        "d4",
+        "17",
+        "ca",
+        "22",
+        "b3",
+        "62",
+        "b9",
+        "e9",
+        "tags",
+        "remotes",
+        "heads",
+        "origin",
+        "refs",
+        "remotes",
+        "heads",
+        "origin",
+        "arch",
+        "hrm"
+      ],
+      "file_types": {
+        ".html": 1,
+        "": 72,
+        ".py": 13,
+        ".md": 1,
+        ".ipynb": 1,
+        ".txt": 1,
+        ".sample": 12,
+        ".png": 1,
+        ".js": 1,
+        ".yaml": 2,
+        ".json": 2
+      },
+      "depth": 5
+    },
+    "architectural_patterns": [
+      "Python Package Structure"
+    ],
+    "maintainability_score": 0.7,
+    "reasoning_trace": [
+      "Starting high-level architectural analysis"
+    ]
+  },
+  "implementation": {
+    "file_analyses": {
+      "pretrain.py": {
+        "lines_of_code": 453,
+        "functions": 11,
+        "classes": 4,
+        "complexity": 57,
+        "imports": [
+          "typing",
+          "dataclasses",
+          "os",
+          "math",
+          "yaml",
+          "shutil",
+          "torch",
+          "torch.distributed",
+          "torch",
+          "torch.utils.data",
+          "tqdm",
+          "wandb",
+          "coolname",
+          "hydra",
+          "pydantic",
+          "omegaconf",
+          "adam_atan2",
+          "puzzle_dataset",
+          "utils.functions",
+          "models.sparse_embedding"
+        ],
+        "docstrings": 0
+      },
+      "puzzle_dataset.py": {
+        "lines_of_code": 199,
+        "functions": 8,
+        "classes": 2,
+        "complexity": 18,
+        "imports": [
+          "os",
+          "json",
+          "numpy",
+          "pydantic",
+          "torch",
+          "torch.utils.data",
+          "models.losses",
+          "dataset.common"
+        ],
+        "docstrings": 0
+      },
+      "evaluate.py": {
+        "lines_of_code": 68,
+        "functions": 1,
+        "classes": 1,
+        "complexity": 7,
+        "imports": [
+          "typing",
+          "yaml",
+          "os",
+          "torch",
+          "torch.distributed",
+          "pydantic",
+          "omegaconf",
+          "pretrain"
+        ],
+        "docstrings": 0
+      },
+      "dataset/build_maze_dataset.py": {
+        "lines_of_code": 142,
+        "functions": 3,
+        "classes": 1,
+        "complexity": 14,
+        "imports": [
+          "typing",
+          "math",
+          "os",
+          "csv",
+          "json",
+          "numpy",
+          "argdantic",
+          "pydantic",
+          "tqdm",
+          "huggingface_hub",
+          "common"
+        ],
+        "docstrings": 0
+      },
+      "dataset/common.py": {
+        "lines_of_code": 51,
+        "functions": 2,
+        "classes": 1,
+        "complexity": 9,
+        "imports": [
+          "typing",
+          "pydantic",
+          "numpy"
+        ],
+        "docstrings": 1
+      },
+      "dataset/build_sudoku_dataset.py": {
+        "lines_of_code": 169,
+        "functions": 5,
+        "classes": 1,
+        "complexity": 17,
+        "imports": [
+          "typing",
+          "os",
+          "csv",
+          "json",
+          "numpy",
+          "argdantic",
+          "pydantic",
+          "tqdm",
+          "huggingface_hub",
+          "common"
+        ],
+        "docstrings": 0
+      },
+      "dataset/build_arc_dataset.py": {
+        "lines_of_code": 291,
+        "functions": 9,
+        "classes": 2,
+        "complexity": 39,
+        "imports": [
+          "typing",
+          "dataclasses",
+          "pathlib",
+          "os",
+          "json",
+          "hashlib",
+          "numpy",
+          "glob",
+          "argdantic",
+          "pydantic",
+          "common"
+        ],
+        "docstrings": 0
+      },
+      "utils/functions.py": {
+        "lines_of_code": 19,
+        "functions": 2,
+        "classes": 0,
+        "complexity": 1,
+        "imports": [
+          "importlib",
+          "inspect"
+        ],
+        "docstrings": 0
+      },
+      "models/layers.py": {
+        "lines_of_code": 158,
+        "functions": 14,
+        "classes": 5,
+        "complexity": 5,
+        "imports": [
+          "typing",
+          "torch",
+          "torch",
+          "torch.nn.functional",
+          "models.common",
+          "flash_attn_interface",
+          "flash_attn"
+        ],
+        "docstrings": 1
+      },
+      "models/losses.py": {
+        "lines_of_code": 101,
+        "functions": 7,
+        "classes": 1,
+        "complexity": 3,
+        "imports": [
+          "typing",
+          "torch",
+          "torch.nn.functional",
+          "torch"
+        ],
+        "docstrings": 0
+      }
+    },
+    "quality_metrics": {
+      "avg_file_size": 165.1,
+      "functions_per_file": 6.2,
+      "classes_per_file": 1.8,
+      "documentation_ratio": 0.025
+    },
+    "dependencies": {
+      "typing": 8,
+      "torch": 8,
+      "pydantic": 7,
+      "os": 6,
+      "numpy": 5,
+      "json": 4,
+      "tqdm": 3,
+      "argdantic": 3,
+      "common": 3,
+      "dataclasses": 2
+    },
+    "reasoning_trace": [
+      "Starting high-level architectural analysis",
+      "Starting low-level implementation analysis"
+    ]
+  },
+  "integrated_insights": {
+    "recommendations": [
+      "Improve code documentation (add docstrings)"
+    ],
+    "potential_issues": [],
+    "health_score": 0.7,
+    "reasoning_convergence": 3
+  }
+}

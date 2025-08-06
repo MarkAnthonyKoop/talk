@@ -121,12 +121,18 @@ class Agent:
 
     def _setup_backend(self):
         try:
+            # Get the settings for the currently configured provider
+            provider_settings = self.cfg.get_provider_settings()
+            
             # Handle both Pydantic v1 and v2 model serialization
             try:
-                provider_dict = self.cfg.provider.model_dump(mode="python")
+                provider_dict = provider_settings.model_dump(mode="python")
             except AttributeError:
                 # Fallback for Pydantic v1
-                provider_dict = self.cfg.provider.dict()
+                provider_dict = provider_settings.dict()
+            
+            # Add the provider name to the dict for the backend selector
+            provider_dict["_provider"] = self.cfg.llm.provider
             
             self.backend: LLMBackend = get_backend(provider_dict)
             

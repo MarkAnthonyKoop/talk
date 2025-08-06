@@ -1,0 +1,148 @@
+{
+  "basic_hrm_test": {
+    "model_parameters": 177922,
+    "config": {
+      "hidden_size": 64,
+      "vocab_size": 100,
+      "seq_len": 16,
+      "H_cycles": 2,
+      "L_cycles": 3,
+      "H_layers": 2,
+      "L_layers": 2,
+      "num_heads": 4,
+      "expansion": 2.0,
+      "halt_max_steps": 4
+    },
+    "reasoning_trace": [
+      {
+        "step": 0,
+        "halted": [
+          false,
+          false
+        ],
+        "steps_taken": [
+          1,
+          1
+        ],
+        "output_shape": [
+          2,
+          16,
+          100
+        ],
+        "q_halt_mean": -5.0,
+        "q_continue_mean": -5.0
+      },
+      {
+        "step": 1,
+        "halted": [
+          false,
+          false
+        ],
+        "steps_taken": [
+          2,
+          2
+        ],
+        "output_shape": [
+          2,
+          16,
+          100
+        ],
+        "q_halt_mean": -5.0,
+        "q_continue_mean": -5.0
+      },
+      {
+        "step": 2,
+        "halted": [
+          false,
+          false
+        ],
+        "steps_taken": [
+          3,
+          3
+        ],
+        "output_shape": [
+          2,
+          16,
+          100
+        ],
+        "q_halt_mean": -5.0,
+        "q_continue_mean": -5.0
+      },
+      {
+        "step": 3,
+        "halted": [
+          true,
+          true
+        ],
+        "steps_taken": [
+          4,
+          4
+        ],
+        "output_shape": [
+          2,
+          16,
+          100
+        ],
+        "q_halt_mean": -5.0,
+        "q_continue_mean": -5.0
+      }
+    ],
+    "learning_improvement": 0.0,
+    "test_success": true
+  },
+  "coding_task_test": {
+    "coding_model_params": 998914,
+    "final_loss": 4.23305082321167,
+    "test_input": [
+      1,
+      2,
+      29,
+      30,
+      5,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "generated_output": [
+      17,
+      31,
+      12,
+      40,
+      42,
+      46,
+      42,
+      40,
+      42,
+      40,
+      42,
+      40,
+      40,
+      49,
+      40,
+      49,
+      33,
+      40,
+      42,
+      42
+    ]
+  },
+  "summary": {
+    "total_tests": 2,
+    "basic_model_params": 177922,
+    "coding_model_params": 998914,
+    "learning_demonstrated": false,
+    "coding_capability": false
+  }
+}
