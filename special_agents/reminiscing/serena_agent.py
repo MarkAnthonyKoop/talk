@@ -287,7 +287,8 @@ Requirements:
                 project_path=project_path,
                 port=self.server_port,
                 context="ide-assistant", 
-                mode=["interactive", "editing"]
+                mode=["interactive", "editing"],
+                enable_dashboard=False
             )
             
             # Wait for server to initialize

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
 Talk v4 - Validated orchestration with built-in agent testing.
 

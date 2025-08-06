@@ -126,7 +126,8 @@ class SerenaWrapper:
                         project_path: Optional[str] = None,
                         port: int = 9121,
                         context: str = "ide-assistant",
-                        mode: List[str] = None) -> subprocess.Popen:
+                        mode: List[str] = None,
+                        enable_dashboard: bool = False) -> subprocess.Popen:
         """
         Start Serena MCP server in the background.
         
@@ -135,6 +136,7 @@ class SerenaWrapper:
             port: Port for SSE server
             context: Serena context to use
             mode: List of modes to activate
+            enable_dashboard: Whether to enable web dashboard
             
         Returns:
             Popen object for the running server
@@ -145,7 +147,8 @@ class SerenaWrapper:
         args = [
             "--transport", "sse",
             "--port", str(port),
-            "--context", context
+            "--context", context,
+            "--enable-web-dashboard", str(enable_dashboard).lower()
         ]
         
         # Add modes

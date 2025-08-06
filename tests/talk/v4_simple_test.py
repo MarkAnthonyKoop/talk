@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
 Simple test of talk_v4_validated agents without full orchestration.
 """

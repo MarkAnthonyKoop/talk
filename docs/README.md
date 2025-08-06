@@ -167,7 +167,7 @@ python talk/talk.py \
 
 All inherit from the generic `Agent` facade and therefore support `switch_provider`, conversation logging, and provenance IDs.
 
-The Agent contract is prompt in ==> completion out.  That is it.   Any other communication is done through the agent's tools.   For example, a json could be sent by creating .talk/xyz.json, and then the model would have the filepath in its completion so the next agent can find the data.
+The Agent contract is prompt in ==> completion out.  That is it.   Any other communication is done through the agent's tools.   For example, a json could be sent by creating .talk/scratch/xyz.json, and then the model would have the filepath in its completion so the next agent can find the data.  the scratch folder is dedicated to this type of "side effect" communication and should be used (subdirs to scratch and uuids used in the filenames should be used to prevent collisions).
 
 ---
 
