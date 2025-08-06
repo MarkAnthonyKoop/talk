@@ -57,8 +57,14 @@ class ReminiscingAgent(Agent):
     - Returning contextual traces that "ring a bell" for the current task
     """
     
-    def __init__(self, **kwargs):
-        """Initialize with memory system components."""
+    def __init__(self, storage_path=None, **kwargs):
+        """Initialize with memory system components.
+        
+        Args:
+            storage_path: Optional path for persistent memory storage
+            **kwargs: Additional arguments for Agent base class
+        """
+        # Extract storage_path before passing to parent
         super().__init__(roles=[
             "You are a memory specialist that helps recall relevant past context.",
             "You analyze new tasks and find related experiences from conversation history.",
@@ -68,7 +74,7 @@ class ReminiscingAgent(Agent):
         # Initialize sub-agents and components
         self.categorization_agent = ContextCategorizationAgent(**kwargs)
         self.memory_trace_agent = MemoryTraceAgent(**kwargs)
-        self.vector_store = ConversationVectorStore()
+        self.vector_store = ConversationVectorStore(storage_path=storage_path)
         
         # Initialize LangGraph workflow if available
         self.workflow = None

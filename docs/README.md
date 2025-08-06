@@ -100,28 +100,9 @@ export TALK_OPENAI_MODEL_NAME="gpt-4o-mini"
 Everything else (paths, logging cadence, debug flags) follows the same pattern:  
 `TALK_<SECTION>_<FIELD>` environment variables override the defaults.
 
----
-
 ## 📦 Installation
 
-```bash
-git clone https://github.com/yourname/talk.git
-cd talk
-python -m venv .venv
-source .venv/bin/activate         # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Make sure you have a C compiler (for `patch`) and that your `patch` command is on `PATH` (Linux/macOS already OK; Windows users can install [GnuWin32 patch](http://gnuwin32.sourceforge.net/packages/patch.htm) or use Git Bash).
-
-Set API keys as env vars, e.g.:
-
-```bash
-export OPENAI_API_KEY="sk-..."
-export ANTHROPIC_API_KEY="..."
-```
-
----
+see code/docs/INSTALL.md
 
 ## 🚀 Usage
 
@@ -167,7 +148,7 @@ python talk/talk.py \
 
 All inherit from the generic `Agent` facade and therefore support `switch_provider`, conversation logging, and provenance IDs.
 
-The Agent contract is prompt in ==> completion out.  That is it.   Any other communication is done through the agent's tools.   For example, a json could be sent by creating .talk/scratch/xyz.json, and then the model would have the filepath in its completion so the next agent can find the data.  the scratch folder is dedicated to this type of "side effect" communication and should be used (subdirs to scratch and uuids used in the filenames should be used to prevent collisions).
+The Agent contract is prompt in ==> completion out.  That is it.   Any other communication is done through the agent's tools.   For example, a json could be sent by creating .talk/scratch/xyz.json, and then the model would have the filepath in its completion so the next agent can find the data.  The scratch folder is dedicated to this type of "side effect" communication and should be used whenever an agent wants to create and send a file to another agent (subdirs to scratch and uuids used in the filenames should be used to prevent collisions).   If a file already existed, or was created as part of a project or existing directory structure, the Agent should just reference that existing file and not make a copy of it in the scratch folder.
 
 ---
 

@@ -38,6 +38,11 @@ class PlanningAgent(Agent):
             "You analyze the current state of task execution and recommend the next action.",
             "You maintain a mental model of the task progress and what remains to be done.",
             "",
+            "MEMORY-AWARE CAPABILITIES:",
+            "- You have access to memories from similar past tasks",
+            "- Learn from previous successful approaches and avoid past mistakes",
+            "- Consider patterns and best practices from historical experiences",
+            "",
             "IMPORTANT: You must recommend specific action labels that map to workflow steps:",
             "- generate_code: Generate code implementation",
             "- apply_files: Apply code changes to files", 
@@ -50,7 +55,8 @@ class PlanningAgent(Agent):
             "1. A hierarchical todo list showing task breakdown",
             "2. Analysis of the current situation",
             "3. A specific next_action recommendation (must be one of the labels above)",
-            "4. Reasoning for your recommendation"
+            "4. Reasoning for your recommendation",
+            "5. Any relevant insights from past memories (if available)"
         ]
         super().__init__(roles=roles, **kwargs)
         
@@ -58,6 +64,7 @@ class PlanningAgent(Agent):
         self.task_description = None
         self.actions_taken = []
         self.scratch_dir = None
+        self.memory_context = None  # Store memory context from ReminiscingAgent
     
     def run(self, input_text: str) -> str:
         """
@@ -113,14 +120,19 @@ class PlanningAgent(Agent):
     def _parse_input(self, input_text: str) -> Dict[str, Any]:
         """Parse the input to extract blackboard state."""
         try:
-            return json.loads(input_text)
+            parsed = json.loads(input_text)
+            # Extract and store memory context if present
+            if "memory_context" in parsed:
+                self.memory_context = parsed["memory_context"]
+            return parsed
         except json.JSONDecodeError:
             # If not JSON, treat as plain text task description
             return {
                 "task_description": input_text,
                 "blackboard_state": {},
                 "last_action": "",
-                "last_result": ""
+                "last_result": "",
+                "memory_context": None
             }
     
     def _build_planning_prompt(self, blackboard_state: Dict[str, Any]) -> str:
@@ -131,6 +143,13 @@ class PlanningAgent(Agent):
         
         # Build context about what's happened so far
         context_parts = [f"TASK: {task}"]
+        
+        # Add memory context if available (from ReminiscingAgent)
+        memory_context = blackboard_state.get("memory_context") or self.memory_context
+        if memory_context:
+            context_parts.append(f"\nRELEVANT MEMORIES FROM SIMILAR TASKS:")
+            context_parts.append(f"{memory_context[:1500]}")  # Truncate if too long
+            context_parts.append("\nConsider these past experiences when planning the approach.")
         
         if self.actions_taken:
             context_parts.append(f"\nACTIONS TAKEN SO FAR: {', '.join(self.actions_taken)}")
@@ -175,6 +194,11 @@ Your response must be valid JSON in this format:
         "action_needed": "Specific action recommendation",
         "potential_problems": "Any issues to watch for",
         "confidence": "high/medium/low"
+    }},
+    "memory_insights": {{
+        "relevant_patterns": "Patterns from past experiences that apply here",
+        "lessons_learned": "What worked or didn't work in similar tasks",
+        "suggested_approach": "Approach based on historical success"
     }},
     "next_action": "generate_code|apply_files|run_tests|research|complete|error_recovery",
     "recommendation": "Explanation of why this action is recommended"

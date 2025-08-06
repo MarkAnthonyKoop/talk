@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 
 """
 Talk - Multi-agent orchestration system for autonomous code generation.

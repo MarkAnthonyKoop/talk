@@ -55,11 +55,20 @@ class AnthropicSettings(BaseSettings):
     max_tokens: int = 4000
     temperature: float = 0.7
 
+class OpenAISettings(BaseSettings):
+    """Settings specific to the OpenAI LLM provider."""
+    model_config = SettingsConfigDict(env_prefix="TALK_OPENAI_", extra="ignore")
+    model_name: str = "gpt-4o"
+    api_key: str = ""
+    max_tokens: int = 4000
+    temperature: float = 0.7
+
 class ProviderSettings(BaseSettings):
     """Container for all provider-specific settings."""
     model_config = SettingsConfigDict(extra="ignore")
     google: GoogleSettings = GoogleSettings()
     anthropic: AnthropicSettings = AnthropicSettings()
+    openai: OpenAISettings = OpenAISettings()
 
 class PathSettings(BaseSettings):
     """Settings for file system paths."""

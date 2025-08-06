@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
 Talk Beast - The ultimate intelligent orchestration system.
 

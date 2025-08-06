@@ -68,9 +68,9 @@ class TestAgent(Agent):
         # Map of supported test runners and their commands
         self.runners = {
             "pytest": ["pytest", "-v"],
-            "unittest": ["python", "-m", "unittest", "discover", "-v"],
+            "unittest": ["python3.11", "-m", "unittest", "discover", "-v"],
             "nose": ["nosetests", "-v"],
-            "django": ["python", "manage.py", "test"],
+            "django": ["python3.11", "manage.py", "test"],
         }
     
     def run(self, input_text: str) -> str:
@@ -495,11 +495,11 @@ class TestAgent(Agent):
         # Define how to check and install each runner
         runner_info = {
             "pytest": {
-                "check_command": ["python", "-m", "pytest", "--version"],
+                "check_command": ["python3.11", "-m", "pytest", "--version"],
                 "install_command": "pip install pytest"
             },
             "unittest": {
-                "check_command": ["python", "-c", "import unittest"],
+                "check_command": ["python3.11", "-c", "import unittest"],
                 "install_command": "Built-in Python module"
             },
             "nose": {
@@ -507,7 +507,7 @@ class TestAgent(Agent):
                 "install_command": "pip install nose"
             },
             "django": {
-                "check_command": ["python", "-c", "import django"],
+                "check_command": ["python3.11", "-c", "import django"],
                 "install_command": "pip install django"
             }
         }
