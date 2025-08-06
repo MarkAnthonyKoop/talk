@@ -74,8 +74,29 @@ class ConversationVectorStore:
             Unique memory ID for the stored conversation
         """
         try:
-            # Generate unique ID
-            memory_id = self._generate_memory_id(conversation_data)
+            # Generate unique ID with collision check
+            max_retries = 10
+            memory_id = None
+            
+            for attempt in range(max_retries):
+                candidate_id = self._generate_memory_id(conversation_data)
+                
+                # Check if ID already exists
+                id_exists = any(
+                    conv.get('memory_id') == candidate_id 
+                    for conv in self.conversations
+                )
+                
+                if not id_exists:
+                    memory_id = candidate_id
+                    break
+                    
+                # Add salt for retry if collision detected
+                log.warning(f"Memory ID collision detected, retrying (attempt {attempt + 1})")
+                conversation_data['_collision_retry'] = attempt
+            
+            if memory_id is None:
+                raise ValueError(f"Could not generate unique ID after {max_retries} attempts")
             
             # Extract text content for embedding
             text_content = self._extract_text_content(conversation_data)
@@ -121,8 +142,29 @@ class ConversationVectorStore:
             Unique memory ID for the stored code context
         """
         try:
-            # Generate unique ID
-            memory_id = self._generate_memory_id(code_data)
+            # Generate unique ID with collision check
+            max_retries = 10
+            memory_id = None
+            
+            for attempt in range(max_retries):
+                candidate_id = self._generate_memory_id(code_data)
+                
+                # Check if ID already exists in code contexts
+                id_exists = any(
+                    ctx.get('memory_id') == candidate_id 
+                    for ctx in self.code_contexts
+                )
+                
+                if not id_exists:
+                    memory_id = candidate_id
+                    break
+                    
+                # Add salt for retry if collision detected
+                log.warning(f"Memory ID collision detected in code context, retrying (attempt {attempt + 1})")
+                code_data['_collision_retry'] = attempt
+            
+            if memory_id is None:
+                raise ValueError(f"Could not generate unique ID after {max_retries} attempts")
             
             # Extract text content for embedding
             text_content = self._extract_code_content(code_data)
@@ -241,13 +283,21 @@ class ConversationVectorStore:
             return []
     
     def _generate_memory_id(self, data: Dict[str, Any]) -> str:
-        """Generate a unique ID for a memory entry."""
-        # Create hash based on content and timestamp
-        content_str = json.dumps(data, sort_keys=True, default=str)
-        timestamp_str = str(datetime.now().timestamp())
-        combined = f"{content_str}_{timestamp_str}"
+        """Generate a unique ID for a memory entry.
         
-        return hashlib.md5(combined.encode()).hexdigest()[:16]
+        Uses UUID to guarantee uniqueness and prevent collisions.
+        """
+        import uuid
+        
+        # Create content hash for debugging/tracing (optional)
+        content_str = json.dumps(data, sort_keys=True, default=str)
+        content_hash = hashlib.md5(content_str.encode()).hexdigest()[:8]
+        
+        # Generate guaranteed unique ID using UUID
+        unique_id = str(uuid.uuid4()).replace('-', '')[:8]
+        
+        # Combine for readable, unique ID (16 chars total)
+        return f"{content_hash}{unique_id}"
     
     def _extract_text_content(self, conversation_data: Dict[str, Any]) -> str:
         """Extract text content from conversation data."""
