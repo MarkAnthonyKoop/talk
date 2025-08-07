@@ -135,6 +135,52 @@ class YouTubeResearchCLI:
             }, f, indent=2)
         print(f"\n✅ Research saved to: {output_file}")
     
+    def general_query(self, query: str) -> None:
+        """
+        Handle general queries without YouTube-specific processing.
+        Just web search and AI response.
+        """
+        print(f"\n💬 Processing: {query}")
+        print("=" * 60)
+        
+        # Check if it needs web search
+        search_keywords = ['search', 'find', 'look up', 'news', 'latest', 'current', 'today']
+        needs_search = any(keyword in query.lower() for keyword in search_keywords)
+        
+        if needs_search:
+            print("\n🌐 Searching the web...")
+            search_results = self.web_agent.run(json.dumps({
+                "query": query,
+                "context": "General web search"
+            }))
+            
+            # Generate response with search results
+            response_prompt = f"""
+            User query: "{query}"
+            
+            Web search results:
+            {search_results[:2000]}
+            
+            Provide a helpful, direct response to their query based on the search results.
+            Be concise and informative.
+            """
+            
+            # Create fresh agent context for the response
+            fresh_agent = Agent(
+                roles=["You are a helpful AI assistant."],
+                overrides={"llm": {"provider": "anthropic"}}
+            )
+            response = fresh_agent.run(response_prompt)
+            print("\n" + response)
+        else:
+            # Create fresh agent context for clean response
+            fresh_agent = Agent(
+                roles=["You are a helpful AI assistant."],
+                overrides={"llm": {"provider": "anthropic"}}
+            )
+            response = fresh_agent.run(query)
+            print("\n" + response)
+    
     def research_topic(self, topic: str, use_history: bool = True) -> None:
         """
         Research a topic using both viewing history and web search.
@@ -547,21 +593,24 @@ def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
     
     1. If it's a greeting or casual message (hello, hi, hey, thanks, etc.) -> respond with: "greeting"
     2. If asking about their YouTube viewing history -> respond with: "analyze" 
-    3. If asking what to learn or for recommendations -> respond with: "analyze"
-    4. If it's a topic they want to research (no question marks, just a topic name) -> respond with: "research-topic"
+    3. If asking what to learn or for recommendations based on their history -> respond with: "analyze"
+    4. If it's a learning topic they want to study (programming, AI, etc.) -> respond with: "research-topic"
     5. If contains a YouTube URL or video ID -> respond with: "research-video"
-    6. If unclear or not related to YouTube/learning -> respond with: "unclear"
+    6. For any other question, request, or query -> respond with: "general"
     
-    Return ONLY ONE WORD from: greeting, analyze, research-topic, research-video, unclear
+    Return ONLY ONE WORD from: greeting, analyze, research-topic, research-video, general
     
     Examples:
     - "hello" -> greeting
-    - "hi there" -> greeting  
     - "What Python videos have I watched?" -> analyze
-    - "machine learning" -> research-topic
+    - "machine learning fundamentals" -> research-topic
     - "LangChain tutorials" -> research-topic
     - "What should I learn next?" -> analyze
     - "https://youtube.com/watch?v=abc" -> research-video
+    - "search the web for today's news" -> general
+    - "what's the weather?" -> general
+    - "explain quantum computing" -> general
+    - "write a python script" -> general
     """
     
     # Determine action
@@ -579,6 +628,11 @@ def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
         print('  yr "What AI videos have I watched?"')
         print('  yr "prompt engineering"')
         print('  yr "https://youtube.com/watch?v=VIDEO_ID"')
+        return
+    
+    elif "general" in action:
+        # Handle general queries without YouTube-specific processing
+        cli.general_query(query)
         return
     
     elif "unclear" in action:
@@ -610,12 +664,15 @@ def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
     
     else:
         # Fallback to pattern matching
-        if "?" in query or any(word in query.lower() for word in ["what", "how", "why", "should", "have i", "did i"]):
+        if "?" in query or any(word in query.lower() for word in ["what", "how", "why", "should", "have i", "did i", "watched", "viewed"]):
             print(f"📊 Analyzing based on your question...\n")
             cli.analyze_and_research(query)
-        else:
-            print(f"🔍 Researching topic: {query}\n")
+        elif any(word in query.lower() for word in ["learn", "tutorial", "course", "study"]):
+            print(f"🔍 Researching learning topic: {query}\n")
             cli.research_topic(query)
+        else:
+            # Default to general query handler
+            cli.general_query(query)
 
 
 def main():

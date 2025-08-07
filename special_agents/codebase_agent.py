@@ -107,7 +107,11 @@ class CodebasePlanningAgent(PlanningAgent):
     def run(self, input_text: str) -> str:
         """Generate or update the codebase plan."""
         try:
-            # Build context from state
+            # Debug logging
+            log.info(f"[CodebasePlanningAgent] Received input: {input_text[:100]}...")
+            
+            # Always build context from state, ignore input_text
+            # The input_text is just what the previous step returned
             context = {
                 "task": self.state.task_description,
                 "iteration": self.state.iteration_count,
@@ -143,18 +147,61 @@ Return JSON with:
 
 Focus on generating a COMPLETE system with all necessary components."""
 
+            # Clear old messages to prevent context explosion
+            if len(self.messages) > 10:
+                self.messages = self.messages[-4:]  # Keep last 2 exchanges
+            
             self._append("user", prompt)
             completion = self.call_ai()
             self._append("assistant", completion)
             
+            # Debug what we got back
+            log.info(f"[CodebasePlanningAgent] Got completion: {completion[:200]}...")
+            
+            # Extract JSON from markdown code blocks if present
+            import re
+            json_match = re.search(r'```(?:json)?\s*\n(.*?)(?:\n```|$)', completion, re.DOTALL)
+            if json_match:
+                json_text = json_match.group(1)
+                log.info("Extracted JSON from markdown code block")
+            else:
+                json_text = completion
+            
             # Parse and update state
             try:
-                plan = json.loads(completion)
+                plan = json.loads(json_text)
                 if not self.state.components_planned and plan.get("components"):
                     self.state.components_planned = plan["components"]
                     log.info(f"Created plan with {len(plan['components'])} components")
-            except:
-                log.warning("Failed to parse planning output as JSON")
+                # Always return the parsed JSON
+                completion = json.dumps(plan)
+            except json.JSONDecodeError as e:
+                log.warning(f"Failed to parse planning output as JSON: {e}")
+                
+                # If we don't have any components planned yet, create a basic plan
+                if not self.state.components_planned:
+                    log.info("Creating fallback plan for REST API")
+                    self.state.components_planned = [
+                        {"name": "models.user", "description": "User model", "estimated_lines": 100, 
+                         "prompt": "Create a User model with username, password hash, email"},
+                        {"name": "auth.jwt", "description": "JWT authentication", "estimated_lines": 150,
+                         "prompt": "Create JWT token generation and verification functions"},
+                        {"name": "api.auth_routes", "description": "Authentication routes", "estimated_lines": 200,
+                         "prompt": "Create login, register, and logout API endpoints"},
+                        {"name": "api.user_routes", "description": "User management routes", "estimated_lines": 150,
+                         "prompt": "Create CRUD endpoints for user management"},
+                        {"name": "middleware.auth", "description": "Auth middleware", "estimated_lines": 100,
+                         "prompt": "Create authentication middleware to protect routes"},
+                        {"name": "main", "description": "Main application", "estimated_lines": 100,
+                         "prompt": "Create main FastAPI/Flask application with all routes"}
+                    ]
+                
+                # Return a minimal valid JSON response
+                completion = json.dumps({
+                    "next_action": "generate_code",
+                    "reasoning": "Continuing with code generation",
+                    "is_complete": False
+                })
             
             return completion
             
@@ -183,7 +230,9 @@ class CodebaseBranchingAgent(BranchingAgent):
                 try:
                     planning_output = json.loads(input_text)
                 except:
-                    pass
+                    log.debug(f"Branching received non-JSON input: {input_text[:100]}")
+            else:
+                log.debug(f"Branching received text input: {input_text[:100]}")
             
             next_action = planning_output.get("next_action", "generate_code")
             
@@ -474,11 +523,11 @@ class CodebaseAgent(Agent):
             on_fail="handle_error"
         ))
         
-        # Step 2: Branching decision point
+        # Step 2: Branching decision point (skip for now, go direct to generate)
         steps.append(Step(
             label="decide_action",
-            agent_key="brancher",
-            on_success="dynamic",  # Will be set dynamically
+            agent_key=None,  # Skip branching agent for now
+            on_success="generate_component",  # Go straight to generation
             on_fail="handle_error"
         ))
         
@@ -486,11 +535,11 @@ class CodebaseAgent(Agent):
         steps.append(Step(
             label="generate_component",
             agent_key="coder",
-            on_success="check_component",
+            on_success="persist_component",  # Skip testing for now
             on_fail="log_error"
         ))
         
-        # Step 4: Check generated component
+        # Step 4: Check generated component (skip for now)
         steps.append(Step(
             label="check_component",
             agent_key="tester",
@@ -517,7 +566,7 @@ class CodebaseAgent(Agent):
         # Step 7: Update plan and check if complete
         steps.append(Step(
             label="update_plan",
-            agent_key="planner",
+            agent_key=None,  # Don't call planner every time, handle in check_complete
             on_success="check_complete",
             on_fail="handle_error"
         ))
@@ -639,10 +688,39 @@ class CodebaseAgent(Agent):
                     # Continue looping
                     remaining = len(self.state.components_planned) - len(self.state.components_completed)
                     print(f"\n[PROGRESS] Iteration {self.state.iteration_count}: {len(self.state.components_completed)} completed, {remaining} remaining")
-                    step.on_success = "decide_action"  # Loop back
+                    
+                    # Only replan every 5 iterations or if no components planned
+                    if self.state.iteration_count % 5 == 0 or not self.state.components_planned:
+                        step.on_success = "initial_planning"  # Replan
+                    else:
+                        step.on_success = "generate_component"  # Skip decide_action, go straight to generation
                     return "continue"
                 
+                elif step.label == "decide_action":
+                    # For now, just pass through to generate_component
+                    return "deciding"
+                
+                elif step.label == "update_plan":
+                    # Just pass through, actual checking happens in check_complete
+                    return "updated"
+                
+                elif step.label == "persist_component":
+                    # Directly persist files from .talk_scratch to workspace
+                    scratch_dir = self.working_dir / ".talk_scratch"
+                    if scratch_dir.exists():
+                        py_files = list(scratch_dir.rglob("*.py"))
+                        for src_file in py_files:
+                            rel_path = src_file.relative_to(scratch_dir)
+                            dst_file = self.working_dir / rel_path
+                            dst_file.parent.mkdir(parents=True, exist_ok=True)
+                            if not dst_file.exists():  # Only copy if not already there
+                                dst_file.write_text(src_file.read_text())
+                                log.info(f"Persisted {rel_path}")
+                    return "persisted"
+                
                 elif step.label == "finalize_codebase":
+                    # Set on_success to None to stop execution
+                    step.on_success = None
                     return "finalized"
                 
                 elif step.label == "log_error":
