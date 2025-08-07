@@ -426,7 +426,10 @@ class YouTubeResearchCLI:
         ai_keywords = ['ai', 'artificial intelligence', 'machine learning', 'ml', 'claude', 'gpt', 
                        'llm', 'neural', 'deep learning', 'langchain', 'agent', 'coding']
         
-        is_ai_query = any(keyword in prompt.lower() for keyword in ai_keywords)
+        # Don't treat general words as AI queries
+        prompt_lower = prompt.lower()
+        is_ai_query = any(keyword in prompt_lower for keyword in ai_keywords) and \
+                     not any(skip in prompt_lower for skip in ['wait', 'said', 'afraid', 'mail'])
         
         if is_ai_query:
             # Search for AI videos by actual keywords in titles
@@ -491,17 +494,53 @@ class YouTubeResearchCLI:
                         if not any(m['url'] == match['url'] for m in data['matches']):
                             data['matches'].append(match)
         else:
-            # General keyword search
+            # General keyword search - look for specific patterns
+            
+            # First, try to find exact artist/creator matches
+            # Handle special cases like "AC/DC" 
+            special_searches = []
+            if "ac/dc" in prompt_lower or "ac dc" in prompt_lower:
+                special_searches.append("AC/DC")
+            
+            # Extract keywords but keep important phrases together
             keywords = self._extract_keywords(prompt)
             
-            for keyword in keywords[:5]:
+            # Also check for multi-word phrases in the original prompt
+            # e.g., "Pink Floyd", "Led Zeppelin"
+            words = prompt.split()
+            for i in range(len(words) - 1):
+                two_word = f"{words[i]} {words[i+1]}"
+                if len(two_word) > 4 and two_word[0].isupper():  # Likely a name
+                    special_searches.append(two_word)
+            
+            # Search for special terms first
+            for term in special_searches:
                 cursor.execute("""
                     SELECT title, channel, url, ai_score, categories
                     FROM videos
-                    WHERE LOWER(title) LIKE ? OR LOWER(channel) LIKE ?
-                    ORDER BY ai_score DESC
+                    WHERE title LIKE ?
+                    ORDER BY title
+                    LIMIT 20
+                """, (f'%{term}%',))
+                
+                matches = [dict(row) for row in cursor.fetchall()]
+                for match in matches:
+                    if not any(m['url'] == match['url'] for m in data['matches']):
+                        data['matches'].append(match)
+            
+            # Then search for individual keywords
+            for keyword in keywords[:5]:
+                # Skip very short keywords that might cause false positives
+                if len(keyword) < 3:
+                    continue
+                    
+                cursor.execute("""
+                    SELECT title, channel, url, ai_score, categories
+                    FROM videos
+                    WHERE LOWER(title) LIKE ?
+                    ORDER BY title
                     LIMIT 10
-                """, (f'%{keyword}%', f'%{keyword}%'))
+                """, (f'%{keyword}%',))
                 
                 matches = [dict(row) for row in cursor.fetchall()]
                 for match in matches:
