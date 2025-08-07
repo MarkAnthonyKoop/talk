@@ -13,9 +13,14 @@ import sys
 import sqlite3
 import json
 import argparse
+import os
+import glob
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass, field
+from datetime import datetime
 import time
+import uuid
 
 # Try to import from installed location first, then fall back to local
 try:
@@ -29,11 +34,23 @@ except ImportError:
     from special_agents.research_agents.web_search_agent import WebSearchAgent
 
 
+@dataclass
+class ResearchPlan:
+    """Represents a research plan with structured steps."""
+    query: str
+    intent: str = "general"
+    requires_history: bool = True
+    requires_web_search: bool = False
+    requires_transcript: bool = False
+    steps: List[Dict] = field(default_factory=list)
+    expected_output: str = "Analysis results"
+
+
 class YouTubeResearchCLI:
-    """Enhanced YouTube CLI with research capabilities."""
+    """Enhanced YouTube CLI with research capabilities and AI planning."""
     
     def __init__(self, db_path: str = "youtube_fast.db"):
-        """Initialize the research CLI."""
+        """Initialize the research CLI with context awareness."""
         # Find database path
         db_locations = [
             Path(db_path),
@@ -55,19 +72,157 @@ class YouTubeResearchCLI:
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
         
-        # Initialize agents
+        # Load context from .talk/yr/ directory
+        self.context = self._load_context()
+        self.conversation_id = str(uuid.uuid4())[:8]
+        
+        # Initialize agents with enhanced prompts
+        system_prompts = [
+            "You are an expert YouTube content analyst and researcher.",
+            "You analyze viewing history and conduct external research.",
+            "You synthesize information from multiple sources.",
+            "You provide comprehensive, structured insights and recommendations.",
+            "Think step by step and create detailed plans when needed.",
+            "Be specific and actionable in your responses."
+        ]
+        
+        # Add context to system prompts if available
+        if self.context:
+            system_prompts.append(f"Previous context: {json.dumps(self.context)[:500]}")
+        
         self.agent = Agent(
+            roles=system_prompts,
+            overrides={"llm": {"provider": "anthropic"}}
+        )
+        
+        # Planning agent for creating research plans
+        self.planner = Agent(
             roles=[
-                "You are an expert YouTube content analyst and researcher.",
-                "You analyze viewing history and conduct external research.",
-                "You synthesize information from multiple sources.",
-                "You provide comprehensive insights and recommendations."
+                "You are an expert at analyzing queries and creating research plans.",
+                "You break down complex questions into actionable steps.",
+                "You understand YouTube content analysis and web research.",
+                "You identify the most efficient way to gather information."
             ],
             overrides={"llm": {"provider": "anthropic"}}
         )
         
         self.web_agent = WebSearchAgent(max_results=5)
         self.transcript_cache = {}
+    
+    def _load_context(self) -> Dict[str, Any]:
+        """Load context from .talk/yr/ directory."""
+        context = {}
+        context_dir = Path.cwd() / ".talk" / "yr"
+        
+        if context_dir.exists():
+            # Find most recent context file
+            json_files = sorted(
+                glob.glob(str(context_dir / "*_*.json")),
+                key=os.path.getmtime,
+                reverse=True
+            )
+            
+            if json_files:
+                most_recent = json_files[0]
+                try:
+                    with open(most_recent, 'r') as f:
+                        context = json.load(f)
+                    print(f"📂 Loaded context from: {Path(most_recent).name}")
+                except Exception as e:
+                    print(f"⚠️ Could not load context: {e}")
+        
+        return context
+    
+    def _save_context(self, data: Dict[str, Any]) -> None:
+        """Save context to .talk/yr/ directory."""
+        context_dir = Path.cwd() / ".talk" / "yr"
+        context_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = context_dir / f"conversation_{timestamp}_{self.conversation_id}.json"
+        
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        print(f"💾 Context saved to: {filename.name}")
+    
+    def _create_research_plan(self, query: str) -> ResearchPlan:
+        """Create an AI-powered research plan."""
+        print("\n🤖 Creating AI-powered research plan...")
+        
+        # Include context in planning
+        context_info = ""
+        if self.context:
+            context_info = f"\nPrevious context:\n{json.dumps(self.context, indent=2)[:1000]}\n"
+        
+        planning_prompt = f"""
+        Analyze this query and create a research plan: "{query}"
+        {context_info}
+        
+        Available capabilities:
+        1. Search YouTube viewing history database (20,000+ videos)
+        2. Fetch YouTube video transcripts
+        3. Search the web for current information
+        4. Analyze patterns in viewing history
+        
+        Determine:
+        1. What is the primary intent?
+        2. What data sources are needed?
+        3. What analysis should be performed?
+        
+        Return a JSON structure:
+        {{
+            "intent": "primary intent",
+            "requires_history": true/false,
+            "requires_web_search": true/false,
+            "requires_transcript": true/false,
+            "steps": [
+                {{"phase": "gather", "action": "...", "details": "..."}},
+                {{"phase": "analyze", "action": "...", "details": "..."}}
+            ],
+            "expected_output": "description of output"
+        }}
+        """
+        
+        try:
+            response = self.planner.run(planning_prompt)
+            # Extract JSON from response
+            import re
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                plan_data = json.loads(json_match.group())
+                plan = ResearchPlan(
+                    query=query,
+                    intent=plan_data.get("intent", "general"),
+                    requires_history=plan_data.get("requires_history", True),
+                    requires_web_search=plan_data.get("requires_web_search", False),
+                    requires_transcript=plan_data.get("requires_transcript", False),
+                    steps=plan_data.get("steps", []),
+                    expected_output=plan_data.get("expected_output", "Analysis results")
+                )
+                
+                # Display plan
+                print(f"\n📋 Research Plan:")
+                print(f"  Intent: {plan.intent}")
+                print(f"  Data sources: history={plan.requires_history}, web={plan.requires_web_search}, transcript={plan.requires_transcript}")
+                if plan.steps:
+                    print("  Steps:")
+                    for step in plan.steps:
+                        print(f"    - [{step['phase']}] {step['action']}: {step['details']}")
+                
+                return plan
+            else:
+                raise ValueError("No JSON found in response")
+        except Exception as e:
+            print(f"⚠️ Using default plan: {e}")
+            # Return default plan
+            return ResearchPlan(
+                query=query,
+                intent="general",
+                requires_history=True,
+                requires_web_search=False,
+                requires_transcript=False
+            )
     
     def research_video(self, video_url: str, deep: bool = False) -> None:
         """
@@ -241,12 +396,134 @@ class YouTubeResearchCLI:
             }, f, indent=2)
         print(f"\n✅ Research saved to: {output_file}")
     
+    def analyze_with_planning(self, prompt: str) -> None:
+        """
+        Analyze with AI-powered planning for better results.
+        """
+        print(f"\n🔍 Advanced Analysis: {prompt}")
+        print("=" * 60)
+        
+        # Create research plan
+        plan = self._create_research_plan(prompt)
+        
+        results = {}
+        
+        # Execute plan based on requirements
+        if plan.requires_history:
+            print("\n📺 Searching viewing history...")
+            results['history'] = self._analyze_history(prompt)
+        
+        if plan.requires_web_search:
+            print("\n🌐 Searching the web...")
+            try:
+                web_results = self.web_agent.run(json.dumps({
+                    "query": prompt,
+                    "context": "Research for YouTube content analysis"
+                }))
+                results['web'] = {"success": True, "data": web_results}
+            except Exception as e:
+                results['web'] = {"success": False, "error": str(e)}
+        
+        if plan.requires_transcript:
+            # Extract video ID if present
+            import re
+            video_id_match = re.search(r'([a-zA-Z0-9_-]{11})', prompt)
+            if video_id_match:
+                video_id = video_id_match.group(1)
+                print(f"\n📝 Fetching transcript for {video_id}...")
+                transcript = self._fetch_transcript(video_id)
+                if transcript:
+                    results['transcript'] = transcript
+        
+        # Enhanced synthesis
+        print("\n🧠 Synthesizing results...")
+        synthesis = self._enhanced_synthesis(plan, results)
+        
+        print("\n" + "=" * 60)
+        print("📊 RESEARCH RESULTS")
+        print("=" * 60)
+        print(synthesis)
+        
+        # Save context for future use
+        self._save_context({
+            "query": prompt,
+            "plan": {
+                "intent": plan.intent,
+                "requires_history": plan.requires_history,
+                "requires_web_search": plan.requires_web_search,
+                "requires_transcript": plan.requires_transcript,
+                "expected_output": plan.expected_output
+            },
+            "results_summary": {
+                "history_matches": len(results.get('history', {}).get('matches', [])),
+                "web_search_performed": plan.requires_web_search,
+                "transcript_fetched": plan.requires_transcript
+            },
+            "timestamp": datetime.now().isoformat()
+        })
+    
+    def _enhanced_synthesis(self, plan: ResearchPlan, results: Dict) -> str:
+        """Enhanced synthesis with better prompting."""
+        synthesis_prompt = f"""
+        Query: "{plan.query}"
+        Intent: {plan.intent}
+        Expected Output: {plan.expected_output}
+        
+        {f"Previous Context: {json.dumps(self.context, indent=2)[:500]}" if self.context else ""}
+        
+        Research Results:
+        """
+        
+        if 'history' in results:
+            history = results['history']
+            matches = history.get('matches', [])
+            synthesis_prompt += f"""
+        
+        Viewing History Analysis:
+        - Total videos in database: {history.get('stats', {}).get('total_videos', 0)}
+        - Relevant matches found: {len(matches)}
+        """
+            if matches:
+                synthesis_prompt += "\n        Top matching videos:\n"
+                for i, match in enumerate(matches[:15], 1):
+                    synthesis_prompt += f"        {i}. {match['title']}\n"
+        
+        if 'web' in results and results['web'].get('success'):
+            synthesis_prompt += f"""
+        
+        Web Research:
+        {results['web'].get('data', '')[:1500]}
+        """
+        
+        if 'transcript' in results:
+            synthesis_prompt += f"""
+        
+        Video Transcript (excerpt):
+        {results.get('transcript', '')[:1000]}
+        """
+        
+        synthesis_prompt += """
+        
+        Based on the research, provide a comprehensive response that:
+        1. Directly answers the user's question with specific examples
+        2. Uses the actual video titles and data from the results
+        3. Provides actionable recommendations
+        4. Is well-structured with clear sections
+        5. Focuses on practical value for the user
+        
+        Format with markdown for clarity. Be specific, not generic.
+        """
+        
+        return self.agent.run(synthesis_prompt)
+    
     def analyze_and_research(self, prompt: str) -> None:
         """
         Analyze viewing history and optionally conduct web research based on prompt.
+        Enhanced version with planning.
         """
-        print(f"\n🔍 Analyzing: {prompt}")
-        print("=" * 60)
+        # Use the new planning-based approach
+        self.analyze_with_planning(prompt)
+        return
         
         # Step 1: Analyze viewing history
         print("\n📺 Searching your YouTube history database...")
@@ -633,9 +910,10 @@ class YouTubeResearchCLI:
         return self.agent.run(analysis_prompt)
 
 
-def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
+def smart_route(cli: YouTubeResearchCLI, query: str, use_planning: bool = True) -> None:
     """
     Intelligently route a query to the appropriate command using AI.
+    Enhanced with planning capabilities.
     """
     # First, quick pattern matching for obvious cases
     if "youtube.com/watch" in query or "youtu.be/" in query:
@@ -722,13 +1000,19 @@ def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
     
     elif "analyze" in action:
         print(f"📊 Analyzing your YouTube history...\n")
-        cli.analyze_and_research(query)
+        if use_planning:
+            cli.analyze_with_planning(query)
+        else:
+            cli.analyze_and_research(query)
     
     else:
         # Fallback to pattern matching
         if "?" in query or any(word in query.lower() for word in ["what", "how", "why", "should", "have i", "did i", "watched", "viewed"]):
             print(f"📊 Analyzing based on your question...\n")
-            cli.analyze_and_research(query)
+            if use_planning:
+                cli.analyze_with_planning(query)
+            else:
+                cli.analyze_and_research(query)
         elif any(word in query.lower() for word in ["learn", "tutorial", "course", "study"]):
             print(f"🔍 Researching learning topic: {query}\n")
             cli.research_topic(query)

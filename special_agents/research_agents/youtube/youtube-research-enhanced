@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+"""
+Enhanced YouTube Research CLI with AI planning and context awareness
+"""
+
+import sys
+from pathlib import Path
+
+# Add parent directories to path
+sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from youtube_research_cli_enhanced import main
+
+if __name__ == "__main__":
+    sys.exit(main())

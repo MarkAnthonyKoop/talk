@@ -21,6 +21,12 @@ yr "https://youtube.com/watch?v=VIDEO_ID"
 
 ## ✨ Features
 
+### 🎯 NEW: AI-Powered Planning & Context Awareness
+- **Context Loading**: Automatically loads previous conversations from `.talk/yr/` directory
+- **AI Planning**: Creates structured research plans using AI analysis
+- **Enhanced Synthesis**: Better response quality with structured prompting
+- **Context Preservation**: Saves conversation context for future interactions
+
 ### 🤖 Smart Routing (`yr`)
 The `yr` command uses AI to understand your intent and automatically routes to the right tool:
 
@@ -52,6 +58,20 @@ yr "hello"                                  # → friendly greeting & help
 - **No unnecessary web searches**: History queries stay local
 - **Context-aware responses**: Greetings, questions, and topics handled differently
 - **Personalized insights**: Based on your actual viewing history
+
+## 🔄 Recent Updates (v2.0)
+
+### Enhanced Features
+1. **Context-Aware Conversations**: The CLI now remembers previous interactions by loading context from `.talk/yr/` directory
+2. **AI-Powered Planning**: Uses a planning agent to create structured research plans before execution
+3. **Improved Response Quality**: Enhanced prompting for more specific, actionable responses
+4. **Better Claude/AI Video Detection**: More accurate identification of AI-related content
+
+### How Context Works
+The yr command now:
+- Automatically loads the most recent context file from `.talk/yr/`
+- Uses this context to provide continuity between conversations
+- Saves new context after each interaction for future reference
 
 ## 📦 Installation
 
@@ -143,16 +163,19 @@ yr --db /path/to/custom.db "your query"
 ## 🛠️ Technical Details
 
 ### Architecture
-- **Smart Router**: AI-powered intent detection
+- **Smart Router**: AI-powered intent detection with planning
+- **Research Planner**: Creates structured plans before execution
+- **Context Manager**: Loads/saves conversation context
 - **Database**: SQLite with 20,000+ videos indexed
 - **Agents**: Specialized agents for different tasks
 - **Web Search**: DuckDuckGo integration for research
 
 ### Key Files
-- `youtube_research_cli.py` - Main CLI with smart routing
+- `youtube_research_cli.py` - Main CLI with smart routing and AI planning
 - `youtube_agent.py` - Core YouTube agent
 - `youtube_history_agent.py` - History analysis agent
 - `build_db_fast.py` - Database builder
+- `.talk/yr/*.json` - Context files for conversation history
 
 ### Dependencies
 ```
@@ -182,6 +205,13 @@ pip install ddgs  # (replaces duckduckgo-search)
 
 ## 📈 Recent Improvements
 
+### Version 2.0 (Latest)
+- ✅ AI-powered research planning with structured steps
+- ✅ Context loading from `.talk/yr/` directory
+- ✅ Enhanced synthesis with better prompting
+- ✅ Conversation memory across sessions
+
+### Version 1.0
 - ✅ Smart routing with AI intent detection
 - ✅ Fixed AI video detection (no more false positives)
 - ✅ No unnecessary web searches for history queries
