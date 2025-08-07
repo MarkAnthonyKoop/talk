@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Category Tree Visualizer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        #controls {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        #visualization {
+            flex: 1;
+            position: relative;
+            background: rgba(255, 255, 255, 0.9);
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #764ba2;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .node {
+            cursor: pointer;
+        }
+        
+        .node circle {
+            stroke-width: 3px;
+            transition: all 0.3s;
+        }
+        
+        .node text {
+            font-size: 12px;
+            pointer-events: none;
+        }
+        
+        .link {
+            fill: none;
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 10px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 300px;
+        }
+        
+        #stats {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .stat-value {
+            color: #764ba2;
+            font-weight: bold;
+        }
+        
+        #search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .search-item {
+            padding: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .search-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h1>🎬 YouTube Category Tree</h1>
+            
+            <div class="control-group">
+                <label for="prompt-input">Reorganization Prompt:</label>
+                <textarea id="prompt-input" rows="3" placeholder="e.g., 'Organize by learning difficulty' or 'Group by technical depth'"></textarea>
+                <button onclick="reorganizeTree()">🔄 Reorganize Tree</button>
+            </div>
+            
+            <div class="control-group">
+                <label for="scheme-select">Category Scheme:</label>
+                <select id="scheme-select" onchange="loadScheme()">
+                    <option value="default">Default (by Topic)</option>
+                    <option value="difficulty">By Difficulty</option>
+                    <option value="chronological">By Time Period</option>
+                    <option value="engagement">By Engagement</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="search-input">Search Videos:</label>
+                <input type="text" id="search-input" placeholder="Search..." oninput="searchVideos()">
+                <div id="search-results"></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="depth-slider">Tree Depth:</label>
+                <input type="range" id="depth-slider" min="1" max="5" value="3" oninput="updateDepth()">
+                <span id="depth-value">3</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="color-scheme">Color Scheme:</label>
+                <select id="color-scheme" onchange="updateColors()">
+                    <option value="category">By Category</option>
+                    <option value="count">By Video Count</option>
+                    <option value="ai-score">By AI Score</option>
+                    <option value="recency">By Recency</option>
+                </select>
+            </div>
+            
+            <button onclick="expandAll()">➕ Expand All</button>
+            <button onclick="collapseAll()">➖ Collapse All</button>
+            <button onclick="exportTree()">💾 Export Tree</button>
+            
+            <div id="stats">
+                <h2>📊 Statistics</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Total Videos:</span>
+                    <span class="stat-value" id="total-videos">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Categories:</span>
+                    <span class="stat-value" id="total-categories">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Selected:</span>
+                    <span class="stat-value" id="selected-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Depth:</span>
+                    <span class="stat-value" id="tree-depth">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="visualization">
+            <svg id="tree-svg"></svg>
+            <div class="tooltip"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #667eea;"></div>
+                    <span>Main Category</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #764ba2;"></div>
+                    <span>Subcategory</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>High Activity</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tree data structure (will be loaded from Python)
+        let treeData = {
+            name: "All Videos",
+            value: 1000,
+            children: [
+                {
+                    name: "Technology",
+                    value: 400,
+                    children: [
+                        { name: "Programming", value: 150, videos: ["Python Tutorial", "JavaScript Basics"] },
+                        { name: "AI/ML", value: 100, videos: ["Claude Guide", "GPT Workshop"] },
+                        { name: "Web Dev", value: 150, videos: ["React Tutorial", "CSS Grid"] }
+                    ]
+                },
+                {
+                    name: "Education",
+                    value: 300,
+                    children: [
+                        { name: "Tutorials", value: 200, videos: ["How to Learn", "Study Tips"] },
+                        { name: "Courses", value: 100, videos: ["MIT Lecture", "Stanford CS"] }
+                    ]
+                },
+                {
+                    name: "Entertainment",
+                    value: 300,
+                    children: [
+                        { name: "Music", value: 150, videos: ["Pink Floyd", "Led Zeppelin"] },
+                        { name: "Gaming", value: 150, videos: ["Minecraft", "Among Us"] }
+                    ]
+                }
+            ]
+        };
+        
+        // D3 setup
+        const margin = { top: 20, right: 120, bottom: 20, left: 120 };
+        const width = document.getElementById('visualization').clientWidth - margin.left - margin.right;
+        const height = document.getElementById('visualization').clientHeight - margin.top - margin.bottom;
+        
+        const svg = d3.select("#tree-svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+        
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+        // Create tree layout
+        const tree = d3.tree()
+            .size([height, width - 200]);
+        
+        // Create hierarchy
+        let root = d3.hierarchy(treeData);
+        
+        // Color scales
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+        const sizeScale = d3.scaleLinear()
+            .domain([0, 1000])
+            .range([5, 30]);
+        
+        // Tooltip
+        const tooltip = d3.select(".tooltip");
+        
+        function update(source) {
+            // Compute the new tree layout
+            const treeData = tree(root);
+            const nodes = treeData.descendants();
+            const links = treeData.links();
+            
+            // Update nodes
+            const node = g.selectAll(".node")
+                .data(nodes, d => d.id || (d.id = ++nodeId));
+            
+            // Enter new nodes
+            const nodeEnter = node.enter().append("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                .on("click", click)
+                .on("mouseover", showTooltip)
+                .on("mouseout", hideTooltip);
+            
+            nodeEnter.append("circle")
+                .attr("r", 0)
+                .style("fill", d => d._children ? "lightsteelblue" : "#fff")
+                .style("stroke", d => colorScale(d.depth));
+            
+            nodeEnter.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.children || d._children ? -13 : 13)
+                .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                .text(d => d.data.name)
+                .style("fill-opacity", 0);
+            
+            // Update
+            const nodeUpdate = nodeEnter.merge(node);
+            
+            nodeUpdate.transition()
+                .duration(750)
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+            
+            nodeUpdate.select("circle")
+                .attr("r", d => sizeScale(d.data.value || 10))
+                .style("fill", d => d._children ? "lightsteelblue" : "#fff")
+                .style("stroke", d => colorScale(d.depth));
+            
+            nodeUpdate.select("text")
+                .style("fill-opacity", 1);
+            
+            // Remove exiting nodes
+            const nodeExit = node.exit().transition()
+                .duration(750)
+                .attr("transform", d => `translate(${source.y},${source.x})`)
+                .remove();
+            
+            nodeExit.select("circle")
+                .attr("r", 0);
+            
+            nodeExit.select("text")
+                .style("fill-opacity", 0);
+            
+            // Update links
+            const link = g.selectAll(".link")
+                .data(links, d => d.target.id);
+            
+            // Enter new links
+            const linkEnter = link.enter().insert("path", "g")
+                .attr("class", "link")
+                .attr("d", d => {
+                    const o = { x: source.x0, y: source.y0 };
+                    return diagonal(o, o);
+                });
+            
+            // Update
+            const linkUpdate = linkEnter.merge(link);
+            
+            linkUpdate.transition()
+                .duration(750)
+                .attr("d", d => diagonal(d.source, d.target));
+            
+            // Remove exiting links
+            link.exit().transition()
+                .duration(750)
+                .attr("d", d => {
+                    const o = { x: source.x, y: source.y };
+                    return diagonal(o, o);
+                })
+                .remove();
+            
+            // Store positions for transition
+            nodes.forEach(d => {
+                d.x0 = d.x;
+                d.y0 = d.y;
+            });
+            
+            updateStats();
+        }
+        
+        function diagonal(s, d) {
+            return `M ${s.y} ${s.x}
+                    C ${(s.y + d.y) / 2} ${s.x},
+                      ${(s.y + d.y) / 2} ${d.x},
+                      ${d.y} ${d.x}`;
+        }
+        
+        function click(event, d) {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+            update(d);
+        }
+        
+        function showTooltip(event, d) {
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            
+            let content = `<strong>${d.data.name}</strong><br/>`;
+            content += `Videos: ${d.data.value || 0}<br/>`;
+            if (d.data.videos) {
+                content += `<br/>Sample videos:<br/>`;
+                d.data.videos.slice(0, 3).forEach(v => {
+                    content += `• ${v}<br/>`;
+                });
+            }
+            
+            tooltip.html(content)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        }
+        
+        function hideTooltip() {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        }
+        
+        function reorganizeTree() {
+            const prompt = document.getElementById('prompt-input').value;
+            if (!prompt) return;
+            
+            // Send to Python backend to reorganize
+            fetch('/reorganize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: prompt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                treeData = data;
+                root = d3.hierarchy(treeData);
+                update(root);
+            })
+            .catch(() => {
+                // Fallback: simulate reorganization
+                alert('Reorganizing tree with: ' + prompt);
+            });
+        }
+        
+        function searchVideos() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const results = [];
+            
+            function search(node) {
+                if (node.data.name.toLowerCase().includes(query)) {
+                    results.push(node);
+                }
+                if (node.children) {
+                    node.children.forEach(search);
+                }
+            }
+            
+            search(root);
+            
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = '';
+            results.slice(0, 10).forEach(node => {
+                const item = document.createElement('div');
+                item.className = 'search-item';
+                item.textContent = node.data.name;
+                item.onclick = () => highlightNode(node);
+                resultsDiv.appendChild(item);
+            });
+        }
+        
+        function highlightNode(node) {
+            // Expand path to node
+            let current = node;
+            while (current.parent) {
+                if (current.parent._children) {
+                    current.parent.children = current.parent._children;
+                    current.parent._children = null;
+                }
+                current = current.parent;
+            }
+            update(root);
+            
+            // Highlight the node
+            d3.selectAll(".node circle")
+                .style("stroke-width", d => d === node ? 5 : 3)
+                .style("stroke", d => d === node ? "#ff6b6b" : colorScale(d.depth));
+        }
+        
+        function updateStats() {
+            document.getElementById('total-videos').textContent = root.data.value || 0;
+            document.getElementById('total-categories').textContent = root.descendants().length - 1;
+            document.getElementById('tree-depth').textContent = d3.max(root.descendants(), d => d.depth);
+        }
+        
+        function expandAll() {
+            function expand(d) {
+                if (d._children) {
+                    d.children = d._children;
+                    d._children = null;
+                }
+                if (d.children) {
+                    d.children.forEach(expand);
+                }
+            }
+            expand(root);
+            update(root);
+        }
+        
+        function collapseAll() {
+            function collapse(d) {
+                if (d.children) {
+                    d._children = d.children;
+                    d.children = null;
+                }
+                if (d._children) {
+                    d._children.forEach(collapse);
+                }
+            }
+            root.children.forEach(collapse);
+            update(root);
+        }
+        
+        function exportTree() {
+            const dataStr = JSON.stringify(treeData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'youtube_category_tree.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        function updateDepth() {
+            const depth = document.getElementById('depth-slider').value;
+            document.getElementById('depth-value').textContent = depth;
+            
+            // Collapse nodes beyond depth
+            function setDepth(node, currentDepth, maxDepth) {
+                if (currentDepth >= maxDepth) {
+                    if (node.children) {
+                        node._children = node.children;
+                        node.children = null;
+                    }
+                } else {
+                    if (node._children && !node.children) {
+                        node.children = node._children;
+                        node._children = null;
+                    }
+                    if (node.children) {
+                        node.children.forEach(child => setDepth(child, currentDepth + 1, maxDepth));
+                    }
+                }
+            }
+            
+            setDepth(root, 0, parseInt(depth));
+            update(root);
+        }
+        
+        function updateColors() {
+            const scheme = document.getElementById('color-scheme').value;
+            // Update color scheme based on selection
+            update(root);
+        }
+        
+        // Initialize
+        let nodeId = 0;
+        root.x0 = height / 2;
+        root.y0 = 0;
+        
+        update(root);
+        
+        // Load data from Python if available
+        function loadFromPython() {
+            fetch('/get_tree_data')
+                .then(response => response.json())
+                .then(data => {
+                    treeData = data;
+                    root = d3.hierarchy(treeData);
+                    update(root);
+                })
+                .catch(() => {
+                    console.log('Using demo data');
+                });
+        }
+        
+        // Try to load real data
+        loadFromPython();
+    </script>
+</body>
+</html>
