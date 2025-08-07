@@ -394,6 +394,29 @@ class YouTubeResearchCLI:
         
         return self.agent.run(synthesis_prompt)
     
+    def _extract_keywords(self, text: str) -> List[str]:
+        """Extract meaningful keywords from text."""
+        import re
+        
+        # Remove common words
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                     'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
+                     'how', 'what', 'when', 'where', 'why', 'which', 'who', 'whom', 'whose',
+                     'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                     'should', 'may', 'might', 'must', 'can', 'could', 'need', 'i', 'me', 
+                     'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 
+                     'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself',
+                     'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 
+                     'them', 'their', 'theirs', 'themselves', 'is', 'are', 'was', 'were', 
+                     'be', 'been', 'being', 'watched', 'videos', 'youtube', 'give', 'list',
+                     'complete', 'show', 'tell'}
+        
+        # Extract words
+        words = re.findall(r'\b[a-z]+\b', text.lower())
+        keywords = [w for w in words if w not in stop_words and len(w) > 2]
+        
+        return list(set(keywords))[:10]
+    
     def _analyze_history(self, prompt: str) -> Dict:
         """Analyze viewing history based on prompt."""
         cursor = self.conn.cursor()
