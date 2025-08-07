@@ -198,7 +198,12 @@ Search queries:
     def _duckduckgo_search(self, query: str) -> List[Dict]:
         """Perform search using DuckDuckGo API."""
         try:
-            from duckduckgo_search import DDGS
+            # Try the new ddgs package first
+            try:
+                from ddgs import DDGS
+            except ImportError:
+                # Fall back to old package name if new one not installed
+                from duckduckgo_search import DDGS
             
             results = []
             with DDGS() as ddgs:
@@ -216,7 +221,7 @@ Search queries:
             return results
             
         except ImportError:
-            log.warning("duckduckgo-search not available, trying alternative methods")
+            log.warning("ddgs/duckduckgo-search not available, trying alternative methods")
             return []
         except Exception as e:
             log.error(f"DuckDuckGo search error: {e}")
