@@ -1,0 +1,17 @@
+#!/usr/bin/env python3.11
+"""
+YouTube Research CLI wrapper script
+"""
+
+import sys
+import os
+
+# Add the directory containing this script to Python path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir)
+
+# Import and run the main function
+from youtube_research_cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())

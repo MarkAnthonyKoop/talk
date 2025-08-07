@@ -1,220 +1,392 @@
-#!/usr/bin/env python3.11
-
+#!/usr/bin/env python3
 """
-Talk - Multi-agent orchestration system for autonomous code generation.
+Talk v11 - Comprehensive Code Generation
 
-Usage:
-    python3 talk.py --task "Implement a function to calculate Fibonacci numbers"
-    python3 talk.py --interactive  # Start in interactive mode
-    python3 talk.py --dir my_project  # Specify working directory
-    python3 talk.py --model gemini-1.5-pro  # Specify model for CodeAgent
-
-Talk creates a multi-agent workflow that:
-1. Analyzes the task and generates code changes
-2. Applies changes to the filesystem
-3. Runs tests to validate the changes
-4. Iterates on failures until the code works correctly
+Key improvements over v10:
+1. Planning agent generates MULTIPLE specific code generation prompts
+2. Code agent gets called repeatedly with focused tasks
+3. Iterative building of large systems
+4. Better prompt decomposition for comprehensive output
 """
 
-import argparse
-import asyncio
 import json
 import logging
 import os
-import signal
-import sys
+import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, Any, Optional, List, Tuple
+import sys
 
-# Import agent framework
+# Add parent to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from agent.agent import Agent
-from agent.settings import Settings
+from plan_runner.blackboard import Blackboard
+from plan_runner.step import Step
 from agent.output_manager import OutputManager
 
-# Import runtime components (renamed package: plan_runner)
-from plan_runner.blackboard import Blackboard, BlackboardEntry
-from plan_runner.step import Step
-from plan_runner.plan_runner import PlanRunner
-
-# Import specialized agents (moved to special_agents)
+from special_agents.planning_agent import PlanningAgent
 from special_agents.code_agent import CodeAgent
 from special_agents.file_agent import FileAgent
 from special_agents.test_agent import TestAgent
-from special_agents.web_search_agent import WebSearchAgent, WebSearchAgentIntegration
+from special_agents.refinement_agent import RefinementAgent
+from special_agents.research_agents.web_search_agent import WebSearchAgent
 
-# Configure logging (will be updated per session)
-log = logging.getLogger("talk")
+log = logging.getLogger(__name__)
 
-class TalkOrchestrator:
+
+class ComprehensivePlanningAgent(PlanningAgent):
     """
-    Orchestrates a multi-agent workflow for autonomous code generation.
+    Enhanced planning agent that generates multiple specific code prompts.
+    """
     
-    This class sets up the blackboard, specialized agents, and execution plan,
-    then runs the workflow to generate, apply, and test code changes.
+    def __init__(self, **kwargs):
+        """Initialize with enhanced planning capabilities."""
+        roles = [
+            "You are a comprehensive planning agent for large-scale code generation.",
+            "You break down complex tasks into MULTIPLE specific code generation prompts.",
+            "Each prompt should be focused on a single component or module.",
+            "",
+            "CRITICAL: Instead of recommending one next_action, you must generate:",
+            "1. A complete hierarchical breakdown of ALL components needed",
+            "2. A LIST of specific code generation prompts (5-20 prompts typically)",
+            "3. Each prompt should be self-contained and generate 100-500 lines of code",
+            "",
+            "For example, if asked to 'build a database system', generate prompts like:",
+            "- 'Create the core database engine with B-tree indexing'",
+            "- 'Implement the SQL query parser and AST'",
+            "- 'Build the transaction manager with ACID properties'",
+            "- 'Create the storage layer with page management'",
+            "- 'Implement the query optimizer with cost-based optimization'",
+            "- 'Build the connection pool and client handler'",
+            "- 'Create the backup and recovery system'",
+            "- 'Implement the replication module'",
+            "- 'Build the monitoring and metrics system'",
+            "- 'Create comprehensive tests for all modules'",
+            "",
+            "Your output must be JSON with:",
+            "1. component_breakdown: Detailed hierarchy of all components",
+            "2. code_generation_prompts: List of specific prompts for CodeAgent",
+            "3. dependencies: Order in which components should be built",
+            "4. estimated_total_lines: Rough estimate of total code to generate"
+        ]
+        
+        # Replace parent's roles with our enhanced ones
+        super().__init__(**kwargs)
+        self.roles = roles
+        self.messages = []  # Reset conversation history
+    
+    def run(self, input_text: str) -> str:
+        """Generate comprehensive planning with multiple code prompts."""
+        try:
+            # Parse input
+            task_info = self._parse_input(input_text)
+            task = task_info.get("task", task_info.get("task_description", ""))
+            
+            # Build comprehensive planning prompt
+            prompt = f"""TASK: {task}
+
+Generate a COMPREHENSIVE plan for building this system. Break it down into multiple specific components.
+
+For EACH component, create a specific code generation prompt that will produce 100-500 lines of focused code.
+
+Think about a production-ready system with:
+- Core functionality modules
+- Data models and schemas
+- API/interface layers
+- Business logic
+- Error handling and validation
+- Testing infrastructure
+- Configuration management
+- Monitoring and logging
+- Documentation
+- CLI/UI components (if applicable)
+
+Return JSON with this structure:
+{{
+    "component_breakdown": {{
+        "core": ["component1", "component2"],
+        "data": ["models", "schemas", "migrations"],
+        "api": ["routes", "handlers", "middleware"],
+        "utils": ["helpers", "validators", "formatters"],
+        "tests": ["unit", "integration", "e2e"],
+        "config": ["settings", "environment"],
+        "docs": ["api_docs", "readme", "examples"]
+    }},
+    "code_generation_prompts": [
+        {{
+            "prompt": "Create the core database engine with B-tree indexing, page management, and buffer pool",
+            "component": "core.engine",
+            "estimated_lines": 400,
+            "dependencies": []
+        }},
+        {{
+            "prompt": "Implement the SQL parser with full SELECT, INSERT, UPDATE, DELETE support",
+            "component": "core.parser", 
+            "estimated_lines": 350,
+            "dependencies": ["core.engine"]
+        }}
+        // ... 10-20 more prompts ...
+    ],
+    "estimated_total_lines": 3000,
+    "implementation_order": ["core.engine", "core.parser", "..."],
+    "rationale": "Explanation of the architecture and approach"
+}}
+
+Generate AT LEAST 10 specific code generation prompts for a comprehensive system."""
+
+            # Get comprehensive plan from LLM
+            self._append("user", prompt)
+            completion = self.call_ai()
+            self._append("assistant", completion)
+            
+            # Save plan for reference
+            self._save_comprehensive_plan(completion)
+            
+            return completion
+            
+        except Exception as e:
+            log.error(f"Comprehensive planning error: {e}")
+            # Return a fallback plan
+            return json.dumps({
+                "component_breakdown": {"core": ["main"]},
+                "code_generation_prompts": [
+                    {
+                        "prompt": f"Generate complete implementation for: {input_text}",
+                        "component": "main",
+                        "estimated_lines": 500,
+                        "dependencies": []
+                    }
+                ],
+                "estimated_total_lines": 500,
+                "error": str(e)
+            })
+    
+    def _save_comprehensive_plan(self, plan_json: str):
+        """Save the comprehensive plan for other agents."""
+        try:
+            scratch_dir = Path.cwd() / ".talk_scratch"
+            scratch_dir.mkdir(exist_ok=True)
+            
+            plan_file = scratch_dir / "comprehensive_plan.json"
+            with open(plan_file, "w") as f:
+                f.write(plan_json)
+            
+            # Also save as readable markdown
+            try:
+                plan = json.loads(plan_json)
+                md_file = scratch_dir / "comprehensive_plan.md"
+                with open(md_file, "w") as f:
+                    f.write("# Comprehensive Implementation Plan\n\n")
+                    f.write(f"**Estimated Total Lines:** {plan.get('estimated_total_lines', 'Unknown')}\n\n")
+                    
+                    f.write("## Component Breakdown\n\n")
+                    for category, components in plan.get("component_breakdown", {}).items():
+                        f.write(f"### {category.title()}\n")
+                        for comp in components:
+                            f.write(f"- {comp}\n")
+                        f.write("\n")
+                    
+                    f.write("## Code Generation Tasks\n\n")
+                    for i, prompt_info in enumerate(plan.get("code_generation_prompts", []), 1):
+                        f.write(f"### Task {i}: {prompt_info.get('component', 'Unknown')}\n")
+                        f.write(f"**Estimated Lines:** {prompt_info.get('estimated_lines', 'Unknown')}\n")
+                        f.write(f"**Prompt:** {prompt_info.get('prompt', 'No prompt')}\n\n")
+                        
+            except:
+                pass  # Markdown generation is optional
+                
+        except Exception as e:
+            log.error(f"Could not save comprehensive plan: {e}")
+
+
+class EnhancedCodeAgent(CodeAgent):
     """
-    def __init__(
-        self,
-        task: str,
-        working_dir: Optional[str] = None,
-        model: str = "gpt-4o",
-        timeout_minutes: int = 30,
-        interactive: bool = False,
-        resume_session: Optional[str] = None,
-        enable_web_search: bool = True
-    ):
-        """
-        Initialize the Talk orchestrator.
+    Enhanced code agent that generates more comprehensive implementations.
+    """
+    
+    def __init__(self, working_dir=None, **kwargs):
+        """Initialize with enhanced code generation."""
+        super().__init__(**kwargs)
+        self.working_dir = Path(working_dir) if working_dir else Path.cwd()
         
-        Args:
-            task: The code generation task description
-            working_dir: Directory where code changes will be applied (overrides session workspace)
-            model: LLM model to use for code generation
-            timeout_minutes: Maximum runtime in minutes
-            interactive: Whether to run in interactive mode
-            resume_session: Path to previous session directory to resume
-            enable_web_search: Whether to enable web search for research tasks
-        """
+        # Update roles for more comprehensive generation
+        self.roles = [
+            "You are an expert code generator creating COMPREHENSIVE implementations.",
+            "Generate COMPLETE, PRODUCTION-READY code with ALL features.",
+            "Each code block should be 100-500+ lines of functional code.",
+            "",
+            "Guidelines:",
+            "1. Include ALL necessary imports and dependencies",
+            "2. Implement FULL functionality, not just stubs",
+            "3. Add comprehensive error handling",
+            "4. Include logging and monitoring hooks",
+            "5. Write detailed docstrings",
+            "6. Consider edge cases and validation",
+            "7. Make code production-ready",
+            "",
+            "Generate as much code as needed to fully implement the requested component.",
+            "Do not use placeholders like 'TODO' or 'implement later'.",
+            "Write the COMPLETE implementation."
+        ]
+        self.messages = []  # Reset conversation history
+    
+    def run(self, input_text: str) -> str:
+        """Generate comprehensive code for the specific prompt."""
+        try:
+            # Parse input - could be JSON or plain text
+            if input_text.startswith("{"):
+                task_info = json.loads(input_text)
+                prompt = task_info.get("prompt", input_text)
+                component = task_info.get("component", "unknown")
+                estimated_lines = task_info.get("estimated_lines", 200)
+            else:
+                prompt = input_text
+                component = "main"
+                estimated_lines = 200
+            
+            # Build comprehensive code generation prompt
+            code_prompt = f"""Component: {component}
+Target Lines: {estimated_lines}+ lines of production code
+
+TASK: {prompt}
+
+Generate a COMPLETE, COMPREHENSIVE implementation. Include:
+1. All imports and dependencies
+2. Full class/function implementations
+3. Error handling and validation
+4. Logging statements
+5. Docstrings and type hints
+6. Helper functions as needed
+7. Configuration handling
+8. Edge case handling
+
+Write {estimated_lines}+ lines of production-ready code.
+Use descriptive names and follow best practices.
+This should be deployable code, not a prototype.
+
+Start with the filename comment, then provide the complete implementation:
+
+```python
+# filename: {component.replace('.', '/')}.py
+```"""
+
+            # Get comprehensive code from LLM
+            self._append("user", code_prompt)
+            completion = self.call_ai()
+            self._append("assistant", completion)
+            
+            # Save to scratch
+            self._save_comprehensive_code(completion, component)
+            
+            return completion
+            
+        except Exception as e:
+            log.error(f"Enhanced code generation error: {e}")
+            return f"# Error generating code: {e}\n\n# Retrying with basic implementation..."
+    
+    def _save_comprehensive_code(self, completion: str, component: str):
+        """Save generated code with proper structure."""
+        try:
+            scratch_dir = self.working_dir / ".talk_scratch"
+            scratch_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Extract code blocks
+            import re
+            code_blocks = re.findall(r'```(?:python|py)?\n(.*?)\n```', completion, re.DOTALL)
+            log.info(f"Found {len(code_blocks)} code blocks in completion for {component}")
+            
+            for i, code in enumerate(code_blocks):
+                # Try to extract filename from comment
+                filename_match = re.search(r'#\s*filename:\s*(.+)', code)
+                if filename_match:
+                    filename = filename_match.group(1).strip()
+                else:
+                    filename = f"{component.replace('.', '_')}_{i}.py"
+                
+                # Create subdirectories if needed
+                file_path = scratch_dir / filename
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Write the code
+                with open(file_path, "w") as f:
+                    # Remove filename comment
+                    code = re.sub(r'^#\s*filename:.*\n', '', code)
+                    f.write(code)
+                
+                log.info(f"Saved {len(code.splitlines())} lines to {filename}")
+                
+        except Exception as e:
+            log.error(f"Could not save comprehensive code: {e}")
+
+
+class TalkV11Orchestrator:
+    """
+    Talk v11 orchestrator for comprehensive code generation.
+    """
+    
+    def __init__(self,
+                 task: str,
+                 working_dir: Optional[str] = None,
+                 model: str = "gemini-2.0-flash",
+                 max_prompts: int = 20):
+        """Initialize v11 orchestrator."""
         self.task = task
-        self.timeout_minutes = timeout_minutes
-        self.interactive = interactive
+        self.max_prompts = max_prompts
         self.start_time = time.time()
-        self.resume_session = resume_session
-        self.enable_web_search = enable_web_search
         
-        # Set the model via environment variable for global override
+        # Set model
         if model:
             os.environ["TALK_FORCE_MODEL"] = model
         
-        # Initialize output manager
+        # Initialize output manager and directories
         self.output_manager = OutputManager()
+        self.session_dir, self.working_dir = self._create_session(working_dir)
         
-        # Create or resume session directory
-        if resume_session:
-            self.session_dir, self.working_dir = self._resume_session(resume_session, working_dir)
-        else:
-            self.session_dir, self.working_dir = self._create_new_session(working_dir)
+        # Setup logging
+        self._setup_logging()
         
-        # Setup logging for this session
-        self._setup_session_logging()
-        
-        log.info(f"Session directory: {self.session_dir}")
-        log.info(f"Working directory: {self.working_dir}")
-        
-        # Initialize or resume the blackboard
-        self.blackboard = self._initialize_blackboard()
+        # Initialize blackboard
+        self.blackboard = Blackboard()
+        self.blackboard.add_sync(
+            label="task_description",
+            content=task,
+            section="input",
+            role="user"
+        )
         
         # Initialize agents
         self.agents = self._create_agents(model)
         
-        # Define the execution plan
-        self.plan = self._create_plan()
-        
-        # ------------------------------------------------------------------
-        # Timeout support – only available on Unix platforms.  Windows lacks
-        # SIGALRM, so we guard the setup with a try/except and simply warn
-        # when the feature is unavailable.
-        # ------------------------------------------------------------------
-        try:
-            # Set up timeout handler (Unix / Linux / macOS)
-            signal.signal(signal.SIGALRM, self._timeout_handler)
-            # Convert minutes to seconds for the alarm
-            signal.alarm(int(timeout_minutes * 60))
-        except AttributeError:
-            # Windows doesn't support SIGALRM
-            log.warning("SIGALRM not supported on this platform. "
-                        "Timeout functionality disabled.")
+        log.info(f"Talk v11 initialized - Model: {model}, Task: {task}")
     
-    def _create_new_session(self, working_dir: Optional[str] = None) -> Tuple[Path, Path]:
-        """
-        Create a new Talk session with proper output management.
-        
-        Args:
-            working_dir: Optional custom working directory
-            
-        Returns:
-            Tuple of (session_directory, working_directory)
-        """
-        # Generate a clean task name for the session
+    def _create_session(self, working_dir: Optional[str] = None) -> Tuple[Path, Path]:
+        """Create session directories."""
         import re
         task_name = re.sub(r'[^\w\s-]', '', self.task.lower())
-        task_name = re.sub(r'\s+', '_', task_name)[:50]  # Limit length
+        task_name = re.sub(r'\s+', '_', task_name)[:50]
         
-        # Create session directory using OutputManager
-        session_dir = self.output_manager.create_session_dir("talk", task_name)
+        session_dir = self.output_manager.create_session_dir("talk_v11_comprehensive", task_name)
         
-        # Determine working directory
         if working_dir:
-            # Use custom working directory but ensure it exists
             work_dir = Path(working_dir).resolve()
-            work_dir.mkdir(parents=True, exist_ok=True)
         else:
-            # Use session workspace as working directory
             work_dir = session_dir / "workspace"
         
-        # Update session info with additional task details
-        session_info_file = session_dir / "session_info.json"
-        with open(session_info_file, "r+") as f:
-            session_info = json.load(f)
-            session_info.update({
-                "task": self.task,
-                "working_directory": str(work_dir),
-                "model": "gpt-4o-mini"  # Will be updated by caller
-            })
-            f.seek(0)
-            json.dump(session_info, f, indent=2)
-            f.truncate()
+        work_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create .talk_scratch
+        scratch_dir = work_dir / ".talk_scratch"
+        scratch_dir.mkdir(exist_ok=True)
         
         return session_dir, work_dir
     
-    def _resume_session(self, resume_path: str, working_dir: Optional[str] = None) -> Tuple[Path, Path]:
-        """
-        Resume a previous Talk session.
+    def _setup_logging(self):
+        """Configure logging."""
+        log_file = self.session_dir / "talk_v11.log"
         
-        Args:
-            resume_path: Path to previous session directory
-            working_dir: Optional override for working directory
-            
-        Returns:
-            Tuple of (session_directory, working_directory)
-        """
-        session_dir = Path(resume_path).resolve()
-        if not session_dir.exists():
-            raise FileNotFoundError(f"Session directory not found: {session_dir}")
-        
-        # Load previous session info
-        session_info_file = session_dir / "session_info.json"
-        if not session_info_file.exists():
-            raise FileNotFoundError(f"Session info not found: {session_info_file}")
-        
-        with open(session_info_file) as f:
-            session_info = json.load(f)
-        
-        # Update task from session info if not provided
-        if not self.task:
-            self.task = session_info.get("task", "Resumed session")
-        
-        # Determine working directory
-        if working_dir:
-            work_dir = Path(working_dir).resolve()
-        else:
-            # Use working directory from session info or default to workspace
-            prev_work_dir = session_info.get("working_directory")
-            if prev_work_dir and Path(prev_work_dir).exists():
-                work_dir = Path(prev_work_dir)
-            else:
-                work_dir = session_dir / "workspace"
-        
-        log.info(f"Resuming session from: {session_dir}")
-        return session_dir, work_dir
-    
-    def _setup_session_logging(self):
-        """Configure logging for this session."""
-        # Create session-specific log file
-        log_file = self.output_manager.get_logs_dir(self.session_dir) / "talk.log"
-        
-        # Configure root logger for this session
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -222,514 +394,202 @@ class TalkOrchestrator:
                 logging.StreamHandler(),
                 logging.FileHandler(log_file)
             ],
-            force=True  # Override any existing configuration
+            force=True
         )
-    
-    def _initialize_blackboard(self) -> Blackboard:
-        """Initialize or resume blackboard from previous session."""
-        blackboard = Blackboard()
-        
-        if self.resume_session:
-            # Try to load previous blackboard state
-            blackboard_file = self.session_dir / "blackboard.json"
-            if blackboard_file.exists():
-                try:
-                    with open(blackboard_file) as f:
-                        data = json.load(f)
-                    
-                    # Restore blackboard entries
-                    for entry_data in data.get("entries", []):
-                        blackboard.add_sync(
-                            label=entry_data["label"],
-                            content=entry_data["content"],
-                            section=entry_data.get("section", "default"),
-                            role=entry_data.get("author", "system")
-                        )
-                    
-                    log.info(f"Resumed blackboard with {len(data.get('entries', []))} entries")
-                except Exception as e:
-                    log.warning(f"Failed to load previous blackboard: {e}")
-        
-        return blackboard
     
     def _create_agents(self, model: str) -> Dict[str, Agent]:
-        """
-        Create specialized agents for the workflow.
-        
-        Args:
-            model: LLM model to use for the CodeAgent
-            
-        Returns:
-            Dictionary of agent instances
-        """
-        # Create the CodeAgent with the specified model
-        # --------------------------------------------------------------
-        # Choose the provider dynamically based on the model name.
-        #  * OpenAI models typically contain "gpt"
-        #  * Google Gemini models usually start with "gemini"
-        #  * Fallback: default to Google configuration
-        # --------------------------------------------------------------
+        """Create agents with appropriate configurations."""
+        # Provider config based on model
         if "gpt" in model.lower():
             provider_config = {"provider": {"openai": {"model_name": model}}}
-        elif model.lower().startswith("gemini"):
+        elif "claude" in model.lower() or "sonnet" in model.lower() or "opus" in model.lower():
+            provider_config = {"provider": {"anthropic": {"model_name": model}}}
+        else:  # Gemini
             provider_config = {"provider": {"google": {"model_name": model}}}
-        else:
-            provider_config = {"provider": {"google": {"model_name": model}}}
-
-        code_agent = CodeAgent(
+        
+        agents = {}
+        
+        # Use enhanced agents
+        agents["planning"] = ComprehensivePlanningAgent(
             overrides=provider_config,
-            name="CodeAgent"
+            name="ComprehensivePlanner"
         )
         
-        # Convert paths to strings, handling Windows/WSL path issues
-        working_dir_str = str(self.working_dir).replace('\\\\wsl.localhost\\Ubuntu', '')
-        if working_dir_str.startswith('\\'):
-            working_dir_str = working_dir_str.replace('\\', '/')
-        
-        # Create the FileAgent with our working directory and same provider
-        file_agent = FileAgent(
-            base_dir=working_dir_str,
+        agents["code"] = EnhancedCodeAgent(
+            working_dir=self.working_dir,
             overrides=provider_config,
-            name="FileAgent"
+            name="ComprehensiveCodeGenerator"
         )
         
-        # Create the TestAgent with our working directory and same provider
-        test_agent = TestAgent(
-            base_dir=working_dir_str,
+        agents["file"] = FileAgent(
+            base_dir=str(self.working_dir),
             overrides=provider_config,
-            name="TestAgent"
+            name="FileOperator"
         )
-        
-        # Create agents dictionary
-        agents = {
-            "coder": code_agent,
-            "file": file_agent,
-            "tester": test_agent
-        }
-        
-        # Add WebSearchAgent if enabled
-        if self.enable_web_search:
-            web_search_agent = WebSearchAgent(
-                overrides=provider_config,
-                name="WebSearchAgent"
-            )
-            agents["researcher"] = web_search_agent
         
         return agents
     
-    def _create_plan(self) -> List[Step]:
-        """
-        Define the execution plan for the code generation workflow.
-        
-        Returns:
-            List of Step objects defining the workflow
-        """
-        # Determine if we should start with research using LLM intelligence
-        should_research = False
-        if self.enable_web_search and "researcher" in self.agents:
-            # Use the CodeAgent to make the research decision
-            coder_agent = self.agents.get("coder")
-            should_research = WebSearchAgentIntegration.should_use_web_search(
-                self.task, 
-                llm_agent=coder_agent
-            )
-        
-        # Create the workflow steps
-        steps = []
-        
-        if should_research:
-            # Optional Step 0: Research if the task would benefit from it
-            research_step = Step(
-                label="research_task",
-                agent_key="researcher",
-                on_success="generate_code"
-            )
-            steps.append(research_step)
-        
-        # Step 1: Generate code changes
-        generate_code = Step(
-            label="generate_code",
-            agent_key="coder",
-            on_success="apply_changes"
-        )
-        steps.append(generate_code)
-        
-        # Step 2: Apply code changes to filesystem
-        apply_changes = Step(
-            label="apply_changes",
-            agent_key="file",
-            on_success="run_tests"
-        )
-        steps.append(apply_changes)
-        
-        # Step 3: Run tests to validate changes
-        run_tests = Step(
-            label="run_tests",
-            agent_key="tester",
-            on_success="check_results"
-        )
-        steps.append(run_tests)
-        
-        # Step 4: Check test results and decide next action
-        check_results = Step(
-            label="check_results",
-            agent_key="coder",  # CodeAgent analyzes test results
-            on_success=None  # End of workflow
-        )
-        steps.append(check_results)
-        
-        return steps
-    
-    def _timeout_handler(self, signum, frame):
-        """Handle timeout by logging and exiting gracefully."""
-        elapsed_minutes = (time.time() - self.start_time) / 60
-        log.error(f"Execution timed out after {elapsed_minutes:.1f} minutes")
-        print(f"\n[WARNING] Execution timed out after {elapsed_minutes:.1f} minutes")
-        
-        # Record timeout in blackboard
-        self.blackboard.add_sync(
-            label="timeout",
-            content=f"Execution timed out after {elapsed_minutes:.1f} minutes",
-            section="system",
-            role="system"
-        )
-        
-        # Exit with error code
-        sys.exit(1)
-    
-    def _prepare_initial_prompt(self) -> str:
-        """
-        Prepare the initial prompt for the first agent (researcher or coder).
-        
-        Returns:
-            Formatted prompt string
-        """
-        # Determine if we're starting with research using LLM intelligence
-        should_research = False
-        if self.enable_web_search and "researcher" in self.agents:
-            coder_agent = self.agents.get("coder")
-            should_research = WebSearchAgentIntegration.should_use_web_search(
-                self.task, 
-                llm_agent=coder_agent
-            )
-        
-        if should_research:
-            # Create research prompt
-            research_query = WebSearchAgentIntegration.create_search_query(self.task)
-            return research_query
-        else:
-            # Create coding prompt
-            return self._prepare_coding_prompt()
-    
-    def _prepare_coding_prompt(self) -> str:
-        """
-        Prepare the initial prompt for the CodeAgent.
-        
-        Returns:
-            Formatted prompt string
-        """
-        # Get a list of files in the working directory
-        file_agent = self.agents["file"]
-        files = file_agent.list_files()
-        
-        # Format the initial prompt with task and file list
-        prompt = f"Task: {self.task}\n\n"
-        
-        # Check if we have research results from previous step
-        research_results = self._get_research_results()
-        if research_results:
-            prompt += f"Research Information:\n{research_results}\n\n"
-        
-        if files:
-            prompt += "Existing files in the project:\n"
-            for file in files:
-                prompt += f"- {file}\n"
-        else:
-            prompt += "This is a new project with no existing files.\n"
-        
-        prompt += "\nPlease generate code changes as unified diffs to implement the task."
-        return prompt
-    
-    def _get_research_results(self) -> Optional[str]:
-        """Get research results from blackboard if available."""
-        try:
-            for entry in self.blackboard.entries():
-                if entry.label == "research_task":
-                    return entry.content
-        except:
-            pass
-        return None
-    
-    def _interactive_mode(self):
-        """Run Talk in interactive mode with user feedback."""
-        print(f"\n[TASK] {self.task}")
-        print(f"[SESSION] {self.session_dir}")
-        print(f"[WORKSPACE] {self.working_dir}")
-        print("[ROBOT] Starting Talk in interactive mode...\n")
-        
-        # Get initial user confirmation
-        input("Press Enter to start the workflow...")
-        
-        # Create and run the plan runner
-        runner = PlanRunner(self.plan, self.agents, self.blackboard)
-        initial_prompt = self._prepare_initial_prompt()
-        
-        # Execute the first step
-        current_step = self.plan[0]
-        print(f"\n[RUNNING] step: {current_step.label}")
-        result = self.agents[current_step.agent_key].run(initial_prompt)
-        self.blackboard.add_sync(current_step.label, result)
-        print(f"[OK] Completed step: {current_step.label}")
-        
-        # Ask user for confirmation before each step
-        current_step = self._get_next_step(current_step)
-        while current_step:
-            print(f"\n[OUTPUT] Previous output:\n{result}\n")
-            proceed = input(f"Continue to step '{current_step.label}'? (y/n): ").lower()
-            
-            if proceed != 'y':
-                print("Workflow paused. You can resume by running the same command.")
-                break
-            
-            print(f"\n[RUNNING] step: {current_step.label}")
-            
-            # Prepare input for the current step
-            step_input = result
-            if current_step.label == "generate_code" and current_step != self.plan[0]:
-                # If this is the code generation step and not the first step,
-                # use the coding prompt with research results
-                step_input = self._prepare_coding_prompt()
-            
-            result = self.agents[current_step.agent_key].run(step_input)
-            self.blackboard.add_sync(current_step.label, result)
-            print(f"[OK] Completed step: {current_step.label}")
-            
-            current_step = self._get_next_step(current_step)
-        
-        print("\n[DONE] Workflow completed!")
-        print(f"Session saved in: {self.session_dir}")
-        print(f"Workspace: {self.working_dir}")
-    
-    def _get_next_step(self, current_step: Step) -> Optional[Step]:
-        """Get the next step in the plan based on on_success field."""
-        if current_step.on_success:
-            for step in self.plan:
-                if step.label == current_step.on_success:
-                    return step
-        return None
-    
-    def _non_interactive_mode(self):
-        """Run Talk in non-interactive mode without user intervention."""
-        print(f"\n[TASK] {self.task}")
-        print(f"[SESSION] {self.session_dir}")
-        print(f"[WORKSPACE] {self.working_dir}")
-        print("[ROBOT] Starting Talk in automatic mode...\n")
-        
-        # Create and run the plan runner
-        runner = PlanRunner(self.plan, self.agents, self.blackboard)
-        initial_prompt = self._prepare_initial_prompt()
-        
-        try:
-            # Execute the full plan
-            result = runner.run(initial_prompt)
-            
-            # Print final result
-            print("\n[DONE] Workflow completed!")
-            print(f"Session saved in: {self.session_dir}")
-            print(f"Workspace: {self.working_dir}")
-            
-            # Print summary
-            print("\n[SUMMARY]")
-            for entry in self.blackboard.entries():
-                print(f"- {entry.label}: {entry.author}")
-            
-        except Exception as e:
-            log.error(f"Error during execution: {str(e)}")
-            print(f"\n[ERROR] Error during execution: {str(e)}")
-            return 1
-        
-        return 0
-    
     def run(self) -> int:
-        """
-        Run the Talk orchestrator.
-        
-        Returns:
-            Exit code (0 for success, non-zero for error)
-        """
+        """Run comprehensive code generation."""
         try:
-            if self.interactive:
-                return self._interactive_mode()
-            else:
-                return self._non_interactive_mode()
+            print(f"\n[TALK v11] Comprehensive Code Generation")
+            print(f"[TASK] {self.task}")
+            print(f"[MODEL] {os.environ.get('TALK_FORCE_MODEL', 'gemini-2.0-flash')}")
+            print(f"[WORKSPACE] {self.working_dir}\n")
+            
+            # Step 1: Comprehensive Planning
+            print("[STEP 1] Generating comprehensive plan...")
+            planning_input = json.dumps({
+                "task": self.task,
+                "max_prompts": self.max_prompts
+            })
+            
+            plan_output = self.agents["planning"].run(planning_input)
+            
+            # Parse the plan
+            try:
+                # Extract JSON from markdown if needed
+                import re
+                json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', plan_output, re.DOTALL)
+                if json_match:
+                    plan_json = json_match.group(1)
+                else:
+                    # Try direct JSON parsing if no markdown blocks
+                    plan_json = plan_output
+                
+                # Clean up any potential issues
+                plan_json = plan_json.strip()
+                if plan_json.startswith('```'):
+                    # Remove incomplete markdown
+                    plan_json = plan_json[3:]
+                    if plan_json.startswith('json'):
+                        plan_json = plan_json[4:]
+                    plan_json = plan_json.strip()
+                    
+                plan = json.loads(plan_json)
+            except Exception as e:
+                log.error(f"Failed to parse plan as JSON: {e}")
+                log.error(f"Plan output was: {plan_output[:500]}")
+                print(f"[ERROR] Planning failed to generate valid JSON: {e}")
+                print(f"[DEBUG] Plan output: {plan_output[:500]}...")
+                return 1
+            
+            code_prompts = plan.get("code_generation_prompts", [])
+            total_prompts = len(code_prompts)
+            estimated_lines = plan.get("estimated_total_lines", 0)
+            
+            print(f"\n[PLAN] Generated {total_prompts} code generation tasks")
+            print(f"[ESTIMATE] ~{estimated_lines} lines of code\n")
+            
+            # Step 2: Iterative Code Generation
+            print("[STEP 2] Generating comprehensive codebase...")
+            
+            generated_files = []
+            total_lines = 0
+            
+            for i, prompt_info in enumerate(code_prompts[:self.max_prompts], 1):
+                print(f"\n[GENERATION {i}/{total_prompts}] {prompt_info.get('component', 'unknown')}")
+                print(f"  Prompt: {prompt_info.get('prompt', 'No prompt')[:100]}...")
+                
+                # Generate code for this component
+                code_input = json.dumps(prompt_info)
+                code_output = self.agents["code"].run(code_input)
+                
+                # Track what was generated
+                lines = code_output.count('\n')
+                total_lines += lines
+                print(f"  Generated: {lines} lines")
+                
+                # Small delay to avoid rate limits
+                if i < total_prompts:
+                    time.sleep(1)
+            
+            # Step 3: Persist all files
+            print(f"\n[STEP 3] Persisting files to workspace...")
+            self._persist_all_files()
+            
+            # Step 4: Summary
+            print(f"\n[COMPLETE] Code generation finished")
+            print(f"Total time: {(time.time() - self.start_time) / 60:.1f} minutes")
+            print(f"Total lines generated: ~{total_lines}")
+            
+            # List generated files
+            py_files = list(self.working_dir.rglob("*.py"))
+            if py_files:
+                print(f"\nGenerated {len(py_files)} Python files:")
+                for f in sorted(py_files)[:20]:
+                    if not str(f).startswith('.'):
+                        size = f.stat().st_size
+                        lines = f.read_text().count('\n')
+                        print(f"  - {f.relative_to(self.working_dir)} ({lines} lines, {size} bytes)")
+                if len(py_files) > 20:
+                    print(f"  ... and {len(py_files) - 20} more")
+            
+            return 0
+            
         except KeyboardInterrupt:
-            print("\n\n[WARNING] Execution interrupted by user")
-            return 130  # Standard exit code for SIGINT
+            print("\n[INTERRUPTED] Execution stopped by user")
+            return 130
         except Exception as e:
             log.exception("Unhandled exception")
-            print(f"\n[ERROR] Unhandled exception: {str(e)}")
+            print(f"\n[ERROR] {str(e)}")
             return 1
-        finally:
-            # ----------------------------------------------------------
-            # Persist blackboard state so that downstream tooling and
-            # users can inspect the full conversation even when the run
-            # terminates due to errors / interrupts.
-            # ----------------------------------------------------------
+    
+    def _persist_all_files(self):
+        """Persist all files from scratch to workspace."""
+        scratch_dir = self.working_dir / ".talk_scratch"
+        if not scratch_dir.exists():
+            return
+        
+        persisted = 0
+        for py_file in scratch_dir.rglob("*.py"):
             try:
-                blackboard_file = self.session_dir / "blackboard.json"
-                with open(blackboard_file, "w", encoding="utf-8") as f:
-                    json.dump(
-                        {
-                            "task": self.task,
-                            "session_dir": str(self.session_dir),
-                            "working_dir": str(self.working_dir),
-                            "entries": [
-                                {
-                                    "id": str(entry.id),
-                                    "section": entry.section,
-                                    "label": entry.label,
-                                    "author": entry.author,
-                                    "content": entry.content,
-                                    # entry.ts may be a datetime, float (unix
-                                    # epoch) or already a string depending on
-                                    # where the BlackboardEntry originated.
-                                    "timestamp": (
-                                        entry.ts
-                                        if isinstance(entry.ts, str)
-                                        else datetime.fromtimestamp(entry.ts).isoformat()
-                                        if isinstance(entry.ts, (int, float))
-                                        else str(entry.ts)
-                                    ),
-                                }
-                                for entry in self.blackboard.entries()
-                            ],
-                        },
-                        f,
-                        indent=2,
-                    )
-                print(f"Blackboard state saved to: {blackboard_file}")
-            except Exception as e:  # pylint: disable=broad-except
-                log.warning("Failed to save blackboard state: %s", e)
+                # Skip if already processed
+                if py_file.suffix == ".processed":
+                    continue
+                
+                # Determine target path
+                rel_path = py_file.relative_to(scratch_dir)
+                target_path = self.working_dir / rel_path
+                
+                # Create parent directories
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Copy file
+                target_path.write_text(py_file.read_text())
+                
+                # Mark as processed
+                py_file.rename(py_file.with_suffix('.processed'))
+                
+                persisted += 1
+                
+            except Exception as e:
+                log.error(f"Failed to persist {py_file}: {e}")
+        
+        print(f"  Persisted {persisted} files from scratch to workspace")
 
-            # Cancel the alarm (Unix/Linux only)
-            try:
-                signal.alarm(0)
-            except AttributeError:
-                # signal.alarm is unavailable on Windows
-                pass
 
 def main():
-    """Parse command line arguments and run the Talk orchestrator."""
-    # Get default model from settings
-    settings = Settings.resolve()
-    # Get the default model from the current provider
-    provider_settings = settings.get_provider_settings()
-    default_model = provider_settings.model_name
+    """Run Talk v11 from command line."""
+    import argparse
     
-    parser = argparse.ArgumentParser(
-        description="Talk - Multi-agent orchestration system for autonomous code generation"
-    )
-    parser.add_argument(
-        "--task", "-t",
-        help="Task description for code generation",
-        default=None
-    )
-    parser.add_argument(
-        "--dir", "-d",
-        help="Working directory for code changes",
-        default=None
-    )
-    parser.add_argument(
-        "--model", "-m",
-        help=f"LLM model to use for code generation (default: {default_model})",
-        default=default_model
-    )
-    parser.add_argument(
-        "--timeout",
-        help="Maximum runtime in minutes",
-        type=int,
-        default=30
-    )
-    parser.add_argument(
-        "--interactive", "-i",
-        help="Run in interactive mode with user confirmation",
-        action="store_true"
-    )
-    parser.add_argument(
-        "--resume", "-r",
-        help="Resume from a previous session directory",
-        default=None
-    )
-    parser.add_argument(
-        "--no-web-search",
-        help="Disable web search for research tasks",
-        action="store_true"
-    )
-    parser.add_argument(
-        "--enhance",
-        help="Enhancement mode: improve the Talk framework itself (adds new agents, features, etc.)",
-        action="store_true"
-    )
-    parser.add_argument(
-        "words",
-        nargs="*",
-        help="Task description as positional arguments (alternative to --task)"
-    )
+    parser = argparse.ArgumentParser(description="Talk v11 - Comprehensive Code Generation")
+    parser.add_argument("task", help="Task description")
+    parser.add_argument("--model", default="gemini-2.0-flash", help="Model to use")
+    parser.add_argument("--working-dir", help="Working directory")
+    parser.add_argument("--max-prompts", type=int, default=20, help="Maximum code prompts to execute")
     
     args = parser.parse_args()
     
-    # Handle enhancement mode
-    if args.enhance:
-        # In enhance mode, ignore --task flag and use positional args for enhancement description
-        enhancement_request = " ".join(args.words) if args.words else ""
-        if not enhancement_request and not args.resume:
-            enhancement_request = input("Enter enhancement description (what would you like to improve about Talk?): ")
-        
-        if enhancement_request:
-            task = f"""Enhance the Talk framework by: {enhancement_request}
-
-Focus on improving the Talk multi-agent system located in /home/xx/code/. This includes:
-- Adding new specialized agents in the special_agents/ directory
-- Improving existing agents and their capabilities  
-- Enhancing the core framework in agent/ and talk/ directories
-- Adding new features and integrations
-- Improving the orchestration and communication between agents
-
-Please analyze the existing codebase structure and implement the requested enhancement while maintaining compatibility with the current architecture."""
-        elif args.resume:
-            task = None  # Will be loaded from resume session
-        else:
-            print("Error: Enhancement description is required")
-            return 1
-    else:
-        # Get task from arguments - either from --task flag or positional arguments
-        task = args.task
-        if not task and args.words:
-            # Join all positional arguments into a single task description
-            task = " ".join(args.words)
-        if not task and not args.resume:
-            task = input("Enter task description: ")
-            if not task:
-                print("Error: Task description is required (unless resuming)")
-                return 1
-    
-    # Create and run the orchestrator
-    # In enhancement mode, default working directory to the Talk framework root
-    working_dir = args.dir
-    if args.enhance and not working_dir and not args.resume:
-        working_dir = "/home/xx/code"
-    
-    orchestrator = TalkOrchestrator(
-        task=task,
-        working_dir=working_dir,
+    orchestrator = TalkV11Orchestrator(
+        task=args.task,
+        working_dir=args.working_dir,
         model=args.model,
-        timeout_minutes=args.timeout,
-        interactive=args.interactive,
-        resume_session=args.resume,
-        enable_web_search=not args.no_web_search
+        max_prompts=args.max_prompts
     )
     
     return orchestrator.run()
 
+
 if __name__ == "__main__":
-    sys.exit(main())
+    exit(main())

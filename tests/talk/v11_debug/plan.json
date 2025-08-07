@@ -1,0 +1,137 @@
+{
+  "component_breakdown": {
+    "core": [
+      "storage_engine",
+      "index_manager",
+      "transaction_manager",
+      "cache_manager"
+    ],
+    "data": [
+      "data_structures",
+      "serialization",
+      "compression"
+    ],
+    "api": [
+      "client_interface",
+      "query_handlers",
+      "connection_manager"
+    ],
+    "utils": [
+      "error_handling",
+      "logging",
+      "validation",
+      "metrics"
+    ],
+    "tests": [
+      "unit_tests",
+      "integration_tests",
+      "benchmark_tests"
+    ],
+    "config": [
+      "settings",
+      "performance_tuning"
+    ],
+    "docs": [
+      "api_docs",
+      "architecture_docs",
+      "examples"
+    ]
+  },
+  "code_generation_prompts": [
+    {
+      "prompt": "Create a storage engine class that handles basic key-value operations (get, put, delete) using memory-mapped files. Include buffer management, file organization, and basic error handling. Implement methods for data persistence and recovery.",
+      "component": "core.storage_engine",
+      "estimated_lines": 400,
+      "dependencies": []
+    },
+    {
+      "prompt": "Implement an LRU cache manager with configurable size limits, eviction policies, and thread-safe operations. Include methods for cache statistics and performance monitoring.",
+      "component": "core.cache_manager",
+      "estimated_lines": 250,
+      "dependencies": [
+        "core.storage_engine"
+      ]
+    },
+    {
+      "prompt": "Create a B-tree index implementation with support for range queries, efficient updates, and concurrent access. Include methods for index maintenance and optimization.",
+      "component": "core.index_manager",
+      "estimated_lines": 350,
+      "dependencies": [
+        "core.storage_engine"
+      ]
+    },
+    {
+      "prompt": "Implement a transaction manager with ACID properties, supporting begin, commit, and rollback operations. Include deadlock detection and resolution mechanisms.",
+      "component": "core.transaction_manager",
+      "estimated_lines": 300,
+      "dependencies": [
+        "core.storage_engine",
+        "core.index_manager"
+      ]
+    },
+    {
+      "prompt": "Create a client interface with methods for database operations, connection management, and query execution. Include proper error handling and response formatting.",
+      "component": "api.client_interface",
+      "estimated_lines": 200,
+      "dependencies": [
+        "core.storage_engine",
+        "core.cache_manager"
+      ]
+    },
+    {
+      "prompt": "Implement data serialization and compression utilities with support for different data types and compression algorithms. Include version compatibility handling.",
+      "component": "data.serialization",
+      "estimated_lines": 250,
+      "dependencies": []
+    },
+    {
+      "prompt": "Create a comprehensive logging and monitoring system with different log levels, rotation policies, and metrics collection. Include integration with standard monitoring tools.",
+      "component": "utils.logging",
+      "estimated_lines": 200,
+      "dependencies": []
+    },
+    {
+      "prompt": "Implement a configuration management system with support for different environments, dynamic configuration updates, and validation. Include performance tuning parameters.",
+      "component": "config.settings",
+      "estimated_lines": 150,
+      "dependencies": []
+    },
+    {
+      "prompt": "Create a comprehensive test suite with unit tests for all core components, integration tests for system behavior, and performance benchmarks. Include test utilities and fixtures.",
+      "component": "tests.unit_tests",
+      "estimated_lines": 400,
+      "dependencies": [
+        "all_core_components"
+      ]
+    },
+    {
+      "prompt": "Implement a CLI tool for database administration, including commands for backup, restore, statistics, and maintenance operations. Include interactive mode and batch processing.",
+      "component": "utils.cli",
+      "estimated_lines": 300,
+      "dependencies": [
+        "api.client_interface"
+      ]
+    },
+    {
+      "prompt": "Create error handling and validation utilities with custom exception classes, input validation, and error recovery mechanisms. Include error logging and reporting.",
+      "component": "utils.error_handling",
+      "estimated_lines": 200,
+      "dependencies": []
+    }
+  ],
+  "estimated_total_lines": 3000,
+  "implementation_order": [
+    "core.storage_engine",
+    "data.serialization",
+    "utils.logging",
+    "utils.error_handling",
+    "config.settings",
+    "core.cache_manager",
+    "core.index_manager",
+    "core.transaction_manager",
+    "api.client_interface",
+    "utils.cli",
+    "tests.unit_tests"
+  ],
+  "rationale": "This architecture follows a layered approach with clear separation of concerns. The core components handle data storage and indexing, while higher-level components provide user interfaces and utilities. The implementation order ensures that fundamental components are built first, followed by dependent features. The system includes comprehensive testing, monitoring, and administration tools for production readiness."
+}

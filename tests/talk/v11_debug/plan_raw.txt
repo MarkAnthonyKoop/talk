@@ -1,0 +1,94 @@
+{
+    "component_breakdown": {
+        "core": ["storage_engine", "index_manager", "transaction_manager", "cache_manager"],
+        "data": ["key_value_pair", "serialization", "compression"],
+        "api": ["rest_interface", "client_sdk", "query_interface"],
+        "utils": ["error_handling", "validation", "logging", "metrics"],
+        "tests": ["unit_tests", "integration_tests", "benchmark_tests"],
+        "config": ["settings", "environment", "constants"],
+        "docs": ["api_docs", "implementation_docs", "examples"]
+    },
+    "code_generation_prompts": [
+        {
+            "prompt": "Create a storage engine class that handles basic file I/O operations, implements append-only log structure, manages data blocks, and includes methods for read/write/delete operations. Include error handling for file operations and disk space management.",
+            "component": "core.storage_engine",
+            "estimated_lines": 300,
+            "dependencies": []
+        },
+        {
+            "prompt": "Implement an LRU cache manager with configurable size limits, eviction policies, and thread-safe operations. Include methods for get/set/delete, statistics tracking, and cache hit ratio monitoring.",
+            "component": "core.cache_manager",
+            "estimated_lines": 200,
+            "dependencies": ["core.storage_engine"]
+        },
+        {
+            "prompt": "Create a key-value pair data structure with serialization/deserialization support, versioning, and optional TTL (Time-To-Live) functionality. Include validation and type checking for values.",
+            "component": "data.key_value_pair",
+            "estimated_lines": 150,
+            "dependencies": []
+        },
+        {
+            "prompt": "Implement a REST API interface with endpoints for CRUD operations, batch operations, and health checks. Include request validation, rate limiting, and proper HTTP status code handling.",
+            "component": "api.rest_interface",
+            "estimated_lines": 250,
+            "dependencies": ["core.storage_engine", "core.cache_manager"]
+        },
+        {
+            "prompt": "Create a transaction manager that ensures ACID properties, implements optimistic locking, and handles concurrent operations. Include deadlock detection and rollback capabilities.",
+            "component": "core.transaction_manager",
+            "estimated_lines": 400,
+            "dependencies": ["core.storage_engine", "data.key_value_pair"]
+        },
+        {
+            "prompt": "Implement a comprehensive logging system with different log levels, rotation policies, and structured logging format. Include performance metrics collection and error tracking.",
+            "component": "utils.logging",
+            "estimated_lines": 200,
+            "dependencies": []
+        },
+        {
+            "prompt": "Create a client SDK with connection pooling, automatic retries, and circuit breaker pattern. Include async/await support and proper error propagation.",
+            "component": "api.client_sdk",
+            "estimated_lines": 300,
+            "dependencies": ["api.rest_interface"]
+        },
+        {
+            "prompt": "Implement a compression manager with multiple compression algorithm support (LZ4, Snappy, etc.) and automatic format detection. Include compression ratio statistics.",
+            "component": "data.compression",
+            "estimated_lines": 250,
+            "dependencies": ["data.key_value_pair"]
+        },
+        {
+            "prompt": "Create a configuration management system with environment variable support, config file parsing, and dynamic reloading capabilities. Include validation for required settings.",
+            "component": "config.settings",
+            "estimated_lines": 150,
+            "dependencies": []
+        },
+        {
+            "prompt": "Implement a comprehensive test suite with unit tests for all core components, integration tests for API endpoints, and performance benchmark tests. Include mock objects and fixtures.",
+            "component": "tests.unit_tests",
+            "estimated_lines": 400,
+            "dependencies": ["all"]
+        },
+        {
+            "prompt": "Create an index manager supporting multiple index types (hash, B-tree) with automatic index maintenance and optimization capabilities. Include index statistics and usage metrics.",
+            "component": "core.index_manager",
+            "estimated_lines": 350,
+            "dependencies": ["core.storage_engine", "data.key_value_pair"]
+        }
+    ],
+    "estimated_total_lines": 2950,
+    "implementation_order": [
+        "config.settings",
+        "utils.logging",
+        "data.key_value_pair",
+        "core.storage_engine",
+        "core.cache_manager",
+        "data.compression",
+        "core.index_manager",
+        "core.transaction_manager",
+        "api.rest_interface",
+        "api.client_sdk",
+        "tests.unit_tests"
+    ],
+    "rationale": "This architecture follows a modular design with clear separation of concerns. The core components handle data storage and retrieval, with separate layers for caching, indexing, and transaction management. The API layer provides multiple interfaces for clients, while utility components handle cross-cutting concerns. The implementation order ensures that fundamental components are built first, followed by dependent features. The testing infrastructure is comprehensive and includes performance benchmarks. The system is designed to be production-ready with proper error handling, monitoring, and configuration management."
+}

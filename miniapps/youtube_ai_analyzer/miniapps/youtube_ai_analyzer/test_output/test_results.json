@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-08-06T19:22:33.964300",
+  "categories": {
+    "ai_coding": 10,
+    "llm_tutorials": 5,
+    "codebase_analysis": 2
+  },
+  "top_channels": [
+    {
+      "name": "AI Academy",
+      "score": 8.5,
+      "categories": [
+        "ai_coding",
+        "llm_tutorials"
+      ]
+    },
+    {
+      "name": "DevTools",
+      "score": 6.2,
+      "categories": [
+        "ai_coding"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "explore_category",
+      "category": "codebase_analysis",
+      "reason": "High-value category with only 2 videos",
+      "suggested_searches": [
+        "AST parsing",
+        "static analysis"
+      ]
+    }
+  ],
+  "learning_paths": [
+    {
+      "name": "AI Development Path",
+      "current_progress": 0.4,
+      "steps": [
+        {
+          "order": 1,
+          "topic": "LLM Basics"
+        },
+        {
+          "order": 2,
+          "topic": "Prompt Engineering"
+        }
+      ]
+    }
+  ]
+}

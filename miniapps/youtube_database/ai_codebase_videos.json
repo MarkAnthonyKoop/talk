@@ -1,0 +1,908 @@
+{
+  "generated": "/home/xx/code/miniapps/youtube_database",
+  "total_videos": 20806,
+  "ai_videos": 1255,
+  "recommendations": [
+    {
+      "title": "Roast of Charlie Sheen",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=uAUUSHpUYrg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "We Are Sinking (German Coast Guard) (Berlitz Ad)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=VSdxqIBfEAw",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Kirobo: Toyota&#39;s Robot Astronaut Heading for International Space Station",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=VcuFk-QK5CM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "WASP - Animal (I F**k Like a Beast) Demo",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=_NFEEi6B4A8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The astounding athletic power of quadcopters | Raffaello D&#39;Andrea",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=w2itwFJCgFQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Crybaby Bastard",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=KVsFaW-mVKM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Sheila Patek: Measuring the fastest animal on earth",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=RHTTIg7HY80",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Lynton Crosby AO - Master Class: Political Campaigning",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=H_YareK6WKk",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "LGBT Discrimination: Last Week Tonight with John Oliver (HBO)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=5d667Bb_iYA",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Lil Jon &amp; The East Side Boyz - Get Low - Lyrics",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=3-bkx6RmDZQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Outkast - Hey Ya! (Official HD Video)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=PWgvGjAhvIw",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Outkast - Ms. Jackson (Official HD Video)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=MYxAiK6VnXw",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Outkast - The Way You Move (Official HD Video) ft. Sleepy Brown",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=xI5NQ-0Ubfs",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Sia - Elastic Heart feat. Shia LaBeouf &amp; Maddie Ziegler (Official Video)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=KWZGAExj-es",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Outkast - Roses (Official HD Video)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=gWju37TZfo0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "German Coast guard trainee",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=yR0lWICH3rY",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Everlast ~ What It&#39;s Like (With Lyrics)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=vPoEA43cqKc",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Jason Mraz - Lucky (feat. Colbie Caillat) [Official Video] [HD Remaster]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=acvIVA9-FMQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "History Fair: Niels Bohr The Master of Quantum Physics",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=iMj9ybxY1Xk",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Disturbed - Save Our Last Goodbye [Official HD]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=tcS6Dm8zXNw",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "GREG ALLMAN MIDNIGHT RIDER",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=yojZ-Ksr8AE",
+      "score": 0.9,
+      "categories": [
+        "llm_tutorials"
+      ]
+    },
+    {
+      "title": "Allman Brothers &quot; Sweet Melissa &quot;",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=R5XJDxe7TVY",
+      "score": 0.9,
+      "categories": [
+        "llm_tutorials"
+      ]
+    },
+    {
+      "title": "Gregg Allman - I&#39;m No Angel",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=NWNKHi2joJE",
+      "score": 0.9,
+      "categories": [
+        "llm_tutorials"
+      ]
+    },
+    {
+      "title": "Frank Zappa - Watermelon In Easter Hay",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=_3cu8sDa90Y",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Frank Zappa   One of the Last Performances (Prague 1991)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=UFtHqDrJ-fA",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Hubblecast 120 Light: Continued Discrepancy in the Universe&#39;s Expansion Rate",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=lIrompAWYEk",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Simon Sinek: Why Leaders Eat Last",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=ReRcHdeUG9Y",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Airbourne - Too Much, Too Young, Too Fast [OFFICIAL VIDEO]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=AkMZ6fV3T_0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Rain Sounds 10 Hours:The Sound of Rain Meditation,Autogenc Training, Deep Sleep,Relaxing Sounds",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=jX6kn9_U8qk",
+      "score": 0.9,
+      "categories": [
+        "ai_agents"
+      ]
+    },
+    {
+      "title": "It&#39;s Electric: Lars x Metallica Revisit Master of Puppets",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=AFAs3Y5Pyf4",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Rohit Prasad: Amazon Alexa and Conversational AI | Lex Fridman Podcast #57",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=Ad89JYS-uZM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "David Chalmers: The Hard Problem of Consciousness | Lex Fridman Podcast #69",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=LW59lMvxmY4",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Jim Gates: Supersymmetry, String Theory and Proving Einstein Right | Lex Fridman Podcast #60",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=IUHkhB366tE",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "1969 (2019 Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=mmkfdYvXznM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "I Wanna Be Your Dog (2019 Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=pxYmMj3MBpQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "We Will Fall (2019 Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=yAEewjC50cQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Implications of Metaphysical Idealism with Bernardo Kastrup",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=hcN4gzXKJ78",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Jeff Hawkins: Thousand Brains Theory of Intelligence | Lex Fridman Podcast #25",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=-EVqrDlAqYo",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Billie Eilish roasts her brother Finneas O&#39;Connell in the CUTEST way possible! Ash London LIVE",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=kZYdNqKGm6c",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "I had too much to dream last night  &quot; the Electric Prunes &quot; cover by: The Surfrajettes  @  8/16/2018",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=-peqqyqUncQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Shinedown - If You Only Knew (Official Video) [HD Remaster]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=xY0HCKOmrW0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Shinedown - The Crow &amp; the Butterfly (Official Video) [4K Remaster]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=1B89Osfj8dg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Elastic Heart (metal cover by Leo Moracchioli)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=H5veAVggF4s",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Jim Keller: Elon Musk and Tesla Autopilot | AI Podcast Clips",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=ymcOLL2qEg8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Elon Musk: Tesla Autopilot | Lex Fridman Podcast #18",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=dEv99vxKjVI",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Elon Musk: Neuralink, AI, Autopilot, and the Pale Blue Dot | Lex Fridman Podcast #49",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=smK9dgdTl40",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Paul Krugman: Economics of Innovation, Automation, Safety Nets &amp; UBI | Lex Fridman Podcast #67",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=OJQepiqSWvg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis",
+        "devops_automation"
+      ]
+    },
+    {
+      "title": "Michio Kaku: Future of Humans, Aliens, Space Travel &amp; Physics | Lex Fridman Podcast #45",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=kD5yc1LQrpQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Eric Weinstein: Revolutionary Ideas in Science, Math, and Society | Lex Fridman Podcast #16",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=2wq9x2QcZN0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Dolphins shot, stabbed off Florida&#39;s Gulf Coast; $20K reward offered for information",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=ZwOfArQi0RE",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Leonard Susskind: Quantum Mechanics, String Theory and Black Holes | Lex Fridman Podcast #41",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=s78hvV3QLUE",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Max Tegmark: Life 3.0 | Lex Fridman Podcast #1",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=Gi8LUnhP5yU",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Christof Koch: Consciousness | Lex Fridman Podcast #2",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=piHkfmeU7Wo",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Sean Carroll: Quantum Mechanics and the Many-Worlds Interpretation | Lex Fridman Podcast #47",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=iNqqOLscOBY",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "How to fix plastic using only Acetone!",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=2YIV0XVkkPE",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Scott Aaronson: Quantum Computing | Lex Fridman Podcast #72",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=uX5t8EivCaM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Inglourious Basterds Scalping",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=Nbk4akH-0-A",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "With A Little Help From My Friends (Remastered 2009)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=0C58ttB2-Qg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Iron Maiden - Fear of The Dark, The Number of The Beast, Run to The Hills Symphonic",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=FS6a0NWI0do",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Trump Sinks in Polls, Claims Disinfectant Comments Were Sarcastic: A Closer Look",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=Lrj0c3Ta-Tg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "&quot;I trolled all of Southeast Texas:&quot; Port Arthur Blue Bell licker talks about what he calls prank",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=47xPmyhckHM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Little Miss Lover (2006 Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=qxTYoM3CQHk",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Castles Made of Sand (2006 Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=t96-5miabxQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "10 Rockers Too Wasted to Perform",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=jko7iguuJDg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The most important bass technique in the world (and 5 tips to master it)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=SL1mg9UoZco",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The Coasters   -   Charlie Brown",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=_UnPzp2lmNk",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Funny Pugs eating breakfast: VR Interactive Video",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=shenUOs-EcY",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Coronavirus protection kit pollutes French coast - BBC News",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=-pp-HZaF_Yo",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "My Curse by Killswitch Engage - Riff Guitar Lesson - #masterthatriff",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=7gk9s5G5eiM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Nirvana - Where Did You Sleep Last Night -  guitar lesson tutorial - leadbelly",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=GBFlwcopJwQ",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Live: SpaceX, NASA Cancels Launch Of U.S. Astronauts To International Space Station | NBC News",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=B6K0-7oj_38",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Metallica: Whiskey in the Jar (Slane Castle - Meath, Ireland - June 8, 2019)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=9MNdOCQYOL8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Santana, John Lee Hooker and Etta James | Full Concert at Fillmore Auditorium (1986)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=NIemkpnMCvg",
+      "score": 0.9,
+      "categories": [
+        "llm_tutorials"
+      ]
+    },
+    {
+      "title": "David Patterson: Computer Architecture and Data Storage | Lex Fridman Podcast #104",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=naed4C4hfAg",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Are Humans Good or Evil? (Ben Goertzel) | AI Podcast Clips with Lex Fridman",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=7vtaNGn6KK8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Man sings nasty song while on Tosh.O and shakes pe",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=vUpLydhLNws",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Blur - Song 2 - Live Glastonbury",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=dzRvdVAdu-I",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "How to Pronounce Qing Dynasty (Real Life Examples!)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=KpSGPtaMlcM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Gnarls Barkley - Run (I&#39;m a Natural Disaster) [Official Video]",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=2GA3a15xF0c",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Wheels of Steel (2009 Remastered Version)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=4Ev3G18Hr_A",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "RAMMSTEIN &quot;Du Hast&quot; English Lyrics HD",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=NKHVUVTzAFc",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Billabong Pipe Masters - Day 3",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=sXMEFKWKyz8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The Last of Us Part II - Official Launch Trailer | PS4",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=eOiUtRF8k28",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Editing The Last of Us Part II (feat. hello)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=yFTdOHJrh-I",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The Harshest Burns from the Roast of Justin Bieber",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=LAOoF2gyQaA",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Master the Art of Sharpening: Bob Kramer&#39;s Secrets Revealed",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=VZYK3rNjvyI",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "How to Sharpen a Knife with a Japanese Master Sharpener",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=0fxL8v2dMho",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "How To Sharpen a Knife Fast - Warthog Sharpeners V-Sharp Extre",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=U-T3reZrQi8",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Confederacy: Last Week Tonight with John Oliver (HBO)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=J5b_-TZwQ0I",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "R.E.M - Losing My Religion (Glastonbury 1999)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=P3ORbNDx83o",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Good Times Bad Times (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=lsZG7n7ries",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "You Shook Me (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=aywXuljytH0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Dazed and Confused (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=yO2n7QoyieM",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Your Time Is Gonna Come (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=5cvEVivHVsU",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Black Mountain Side (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=5Y2yoadwSQ0",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Communication Breakdown (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=3EH7QMVnSRI",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Heartbreaker (Remaster)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=0hdQi2_HzAc",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Golfing Disasters - Tosh.0",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=L0bbvTKfJJc",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "Soundgarden - Black Hole Sun (Remastered Audio)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=efc7njKAfgo",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    },
+    {
+      "title": "The Weight (Remastered 2000)",
+      "channel": "Unknown",
+      "url": "https://www.youtube.com/watch?v=QWu-f7HFFJE",
+      "score": 0.9,
+      "categories": [
+        "codebase_analysis"
+      ]
+    }
+  ]
+}

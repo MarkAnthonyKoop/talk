@@ -1,0 +1,13 @@
+Model: gemini-2.0-flash
+Elapsed: 0.0 seconds
+Return code: 1
+
+--- STDOUT ---
+
+--- STDERR ---
+Traceback (most recent call last):
+  File "/home/xx/.local/bin/talk", line 3, in <module>
+    from talk.talk import main
+  File "/home/xx/code/talk/talk.py", line 22, in <module>
+    import tiktoken
+ModuleNotFoundError: No module named 'tiktoken'
