@@ -197,37 +197,44 @@ class YouTubeResearchCLI:
     
     def analyze_and_research(self, prompt: str) -> None:
         """
-        Analyze viewing history and conduct web research based on prompt.
+        Analyze viewing history and optionally conduct web research based on prompt.
         """
-        print(f"\n🔍 Analyzing and researching: {prompt}")
+        print(f"\n🔍 Analyzing: {prompt}")
         print("=" * 60)
         
         # Step 1: Analyze viewing history
-        print("\n📺 Analyzing viewing history...")
+        print("\n📺 Searching your YouTube history database...")
         history_data = self._analyze_history(prompt)
         
-        # Step 2: Extract topics to research
-        topics = self._extract_research_topics(prompt, history_data)
-        print(f"\n🎯 Topics to research: {', '.join(topics)}")
+        # Check if this is purely a viewing history query
+        history_keywords = ['watched', 'viewed', 'my history', 'have i', 'did i', 'show me', 'tell me what']
+        is_history_query = any(keyword in prompt.lower() for keyword in history_keywords)
         
-        # Step 3: Web research for each topic
-        print("\n🌐 Conducting web research...")
+        # Only do web research if it's NOT a pure history query
         research_results = {}
-        for topic in topics[:3]:
-            print(f"  Researching: {topic}")
-            results = self.web_agent.run(json.dumps({
-                "query": topic,
-                "context": prompt
-            }))
-            research_results[topic] = results
-            time.sleep(1)
+        if not is_history_query:
+            # Step 2: Extract topics to research
+            topics = self._extract_research_topics(prompt, history_data)
+            if topics:
+                print(f"\n🎯 Topics to research: {', '.join(topics)}")
+                
+                # Step 3: Web research for each topic
+                print("\n🌐 Conducting web research...")
+                for topic in topics[:3]:
+                    print(f"  Researching: {topic}")
+                    results = self.web_agent.run(json.dumps({
+                        "query": topic,
+                        "context": prompt
+                    }))
+                    research_results[topic] = results
+                    time.sleep(1)
         
         # Step 4: Combined analysis
-        print("\n🧠 Generating comprehensive analysis...")
+        print("\n🧠 Generating analysis...")
         analysis = self._comprehensive_analysis(prompt, history_data, research_results)
         
         print("\n" + "=" * 60)
-        print("📊 COMPREHENSIVE ANALYSIS")
+        print("📊 ANALYSIS RESULTS")
         print("=" * 60)
         print(analysis)
     
@@ -344,21 +351,100 @@ class YouTubeResearchCLI:
     def _analyze_history(self, prompt: str) -> Dict:
         """Analyze viewing history based on prompt."""
         cursor = self.conn.cursor()
-        keywords = prompt.lower().split()[:5]
+        data = {'matches': [], 'stats': {}}
         
-        data = {'matches': []}
-        for keyword in keywords:
-            cursor.execute("""
-                SELECT title, channel, url, ai_score
-                FROM videos
-                WHERE LOWER(title) LIKE ? OR LOWER(channel) LIKE ?
-                ORDER BY ai_score DESC
-                LIMIT 5
-            """, (f'%{keyword}%', f'%{keyword}%'))
+        # Check if asking about AI videos specifically
+        ai_keywords = ['ai', 'artificial intelligence', 'machine learning', 'ml', 'claude', 'gpt', 
+                       'llm', 'neural', 'deep learning', 'langchain', 'agent', 'coding']
+        
+        is_ai_query = any(keyword in prompt.lower() for keyword in ai_keywords)
+        
+        if is_ai_query:
+            # Search for AI videos by actual keywords in titles
+            # The ai_score field has false positives, so we search directly
+            ai_search_terms = ['claude', 'gpt', 'chatgpt', 'langchain', 'llm', 
+                              'machine learning', 'neural', 'ai agent', 'artificial intelligence',
+                              'deep learning', 'openai', 'anthropic', 'gemini', 'copilot']
             
-            matches = [dict(row) for row in cursor.fetchall()]
-            if matches:
-                data['matches'].extend(matches)
+            all_ai_videos = []
+            for term in ai_search_terms:
+                cursor.execute("""
+                    SELECT title, channel, url, ai_score, categories
+                    FROM videos
+                    WHERE LOWER(title) LIKE ?
+                    ORDER BY title
+                    LIMIT 50
+                """, (f'%{term}%',))
+                
+                videos = [dict(row) for row in cursor.fetchall()]
+                for video in videos:
+                    # Avoid duplicates
+                    if not any(v['url'] == video['url'] for v in all_ai_videos):
+                        all_ai_videos.append(video)
+            
+            # Also search for general "AI" but filter out false positives
+            cursor.execute("""
+                SELECT title, channel, url, ai_score, categories
+                FROM videos
+                WHERE LOWER(title) LIKE '%ai %' OR LOWER(title) LIKE '% ai%'
+                ORDER BY title
+                LIMIT 200
+            """)
+            
+            general_ai = [dict(row) for row in cursor.fetchall()]
+            
+            # Filter out likely false positives (music, non-tech content)
+            exclude_keywords = ['said', 'wait', 'afraid', 'rain', 'paid', 'daily', 'hair', 'fair', 'mail']
+            for video in general_ai:
+                title_lower = video['title'].lower()
+                # Check if it's likely a real AI video
+                if not any(exclude in title_lower for exclude in exclude_keywords):
+                    if not any(v['url'] == video['url'] for v in all_ai_videos):
+                        all_ai_videos.append(video)
+            
+            data['matches'] = all_ai_videos[:200]  # Limit to 200 videos
+            data['stats']['total_ai_videos'] = len(all_ai_videos)
+            
+            # Also get some specific keyword matches
+            for keyword in ['claude', 'gpt', 'langchain', 'ai', 'agent', 'llm']:
+                if keyword in prompt.lower():
+                    cursor.execute("""
+                        SELECT title, channel, url, ai_score, categories
+                        FROM videos
+                        WHERE LOWER(title) LIKE ? OR LOWER(channel) LIKE ?
+                        ORDER BY ai_score DESC
+                        LIMIT 20
+                    """, (f'%{keyword}%', f'%{keyword}%'))
+                    
+                    specific_matches = [dict(row) for row in cursor.fetchall()]
+                    # Add to matches if not already there
+                    for match in specific_matches:
+                        if not any(m['url'] == match['url'] for m in data['matches']):
+                            data['matches'].append(match)
+        else:
+            # General keyword search
+            keywords = self._extract_keywords(prompt)
+            
+            for keyword in keywords[:5]:
+                cursor.execute("""
+                    SELECT title, channel, url, ai_score, categories
+                    FROM videos
+                    WHERE LOWER(title) LIKE ? OR LOWER(channel) LIKE ?
+                    ORDER BY ai_score DESC
+                    LIMIT 10
+                """, (f'%{keyword}%', f'%{keyword}%'))
+                
+                matches = [dict(row) for row in cursor.fetchall()]
+                for match in matches:
+                    if not any(m['url'] == match['url'] for m in data['matches']):
+                        data['matches'].append(match)
+        
+        # Get general stats
+        cursor.execute("SELECT COUNT(*) FROM videos")
+        data['stats']['total_videos'] = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM videos WHERE ai_score > 0.5")
+        data['stats']['ai_videos'] = cursor.fetchone()[0]
         
         return data
     
@@ -384,23 +470,57 @@ class YouTubeResearchCLI:
     
     def _comprehensive_analysis(self, prompt: str, history_data: Dict, research: Dict) -> str:
         """Generate comprehensive analysis combining history and research."""
-        analysis_prompt = f"""
-        Provide comprehensive analysis for: "{prompt}"
         
-        Viewing History Insights:
-        {json.dumps(history_data, indent=2)[:1500]}
+        # If we have matches, format them nicely
+        total_matches = len(history_data.get('matches', []))
+        ai_video_count = history_data.get('stats', {}).get('ai_videos', 0)
         
-        Web Research Findings:
-        {json.dumps(research, indent=2)[:1500]}
-        
-        Deliver:
-        1. Direct answer to the query
-        2. Relevant videos from history
-        3. Key findings from web research
-        4. Synthesis and connections
-        5. Actionable recommendations
-        6. Further exploration suggestions
-        """
+        if total_matches > 0:
+            # Format top videos
+            top_videos = []
+            for video in history_data['matches'][:20]:
+                top_videos.append(f"- {video['title']} (Score: {video.get('ai_score', 0):.2f})")
+            
+            video_list = "\n".join(top_videos)
+            
+            analysis_prompt = f"""
+            User asked: "{prompt}"
+            
+            Database Statistics:
+            - Total videos in history: {history_data.get('stats', {}).get('total_videos', 0)}
+            - AI/coding videos: {ai_video_count}
+            - Matches found: {total_matches}
+            
+            Top Matching Videos:
+            {video_list}
+            
+            {"Web Research:" + json.dumps(research, indent=2)[:500] if research else ""}
+            
+            Provide a clear, helpful response that:
+            1. Directly answers their question about their viewing history
+            2. Lists specific videos they've watched (use the titles provided)
+            3. Identifies patterns in their viewing
+            4. {"Includes web research findings" if research else "Provides insights based on their history"}
+            5. Offers personalized recommendations based on what they've watched
+            
+            Be specific and reference actual video titles from their history.
+            """
+        else:
+            analysis_prompt = f"""
+            User asked: "{prompt}"
+            
+            No matching videos found in their history for this query.
+            Total videos in database: {history_data.get('stats', {}).get('total_videos', 0)}
+            AI videos in database: {ai_video_count}
+            
+            {"Web Research:" + json.dumps(research, indent=2)[:500] if research else ""}
+            
+            Provide a helpful response explaining:
+            1. That no matching videos were found for their specific query
+            2. Suggest they might want to explore this topic
+            3. {"Include web research findings" if research else "Offer alternative search suggestions"}
+            4. Recommend related content they might find interesting
+            """
         
         return self.agent.run(analysis_prompt)
 
@@ -409,69 +529,93 @@ def smart_route(cli: YouTubeResearchCLI, query: str) -> None:
     """
     Intelligently route a query to the appropriate command using AI.
     """
-    # Use AI to determine the best action
-    routing_prompt = f"""
-    Analyze this user query and determine the best action:
-    "{query}"
-    
-    Available actions:
-    1. research-video: If the query contains a YouTube URL or video ID
-    2. research-topic: If the query is about researching a specific topic/technology
-    3. analyze: If the query is asking a question about viewing history or needs recommendations
-    
-    Return ONLY one of these exact words: research-video, research-topic, analyze
-    
-    Examples:
-    - "https://youtube.com/watch?v=abc123" -> research-video
-    - "LangChain RAG systems" -> research-topic  
-    - "What should I learn next?" -> analyze
-    - "What videos about Python have I watched?" -> analyze
-    - "Machine learning fundamentals" -> research-topic
-    """
-    
-    # Determine action
-    action = cli.agent.run(routing_prompt).strip().lower()
-    
-    # Clean up action (remove any extra text)
-    if "research-video" in action:
-        action = "research-video"
-    elif "research-topic" in action:
-        action = "research-topic"
-    elif "analyze" in action:
-        action = "analyze"
-    else:
-        # Default fallback based on patterns
-        if "youtube.com" in query or "youtu.be" in query or "watch?v=" in query:
-            action = "research-video"
-        elif "?" in query or any(word in query.lower() for word in ["what", "how", "why", "should", "have i", "did i"]):
-            action = "analyze"
-        else:
-            action = "research-topic"
-    
-    print(f"🤖 Auto-routing to: {action}\n")
-    
-    # Execute the appropriate action
-    if action == "research-video":
-        # Extract URL if present
+    # First, quick pattern matching for obvious cases
+    if "youtube.com/watch" in query or "youtu.be/" in query:
+        print("🎥 Detected YouTube URL - researching video...\n")
         import re
         url_pattern = r'(https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)[^\s]+)'
         match = re.search(url_pattern, query)
         if match:
             cli.research_video(match.group(1))
+            return
+    
+    # Use AI to understand intent and determine action
+    routing_prompt = f"""
+    Analyze this user input: "{query}"
+    
+    Determine the user's intent and what they need:
+    
+    1. If it's a greeting or casual message (hello, hi, hey, thanks, etc.) -> respond with: "greeting"
+    2. If asking about their YouTube viewing history -> respond with: "analyze" 
+    3. If asking what to learn or for recommendations -> respond with: "analyze"
+    4. If it's a topic they want to research (no question marks, just a topic name) -> respond with: "research-topic"
+    5. If contains a YouTube URL or video ID -> respond with: "research-video"
+    6. If unclear or not related to YouTube/learning -> respond with: "unclear"
+    
+    Return ONLY ONE WORD from: greeting, analyze, research-topic, research-video, unclear
+    
+    Examples:
+    - "hello" -> greeting
+    - "hi there" -> greeting  
+    - "What Python videos have I watched?" -> analyze
+    - "machine learning" -> research-topic
+    - "LangChain tutorials" -> research-topic
+    - "What should I learn next?" -> analyze
+    - "https://youtube.com/watch?v=abc" -> research-video
+    """
+    
+    # Determine action
+    action = cli.agent.run(routing_prompt).strip().lower()
+    
+    # Clean up action response
+    if "greeting" in action:
+        print("👋 Hello! I'm your YouTube Research Assistant.\n")
+        print("I can help you:")
+        print("  📺 Analyze your YouTube viewing history")
+        print("  🔍 Research topics with web search")
+        print("  📝 Fetch and analyze video transcripts")
+        print("  💡 Provide learning recommendations\n")
+        print("Try asking:")
+        print('  yr "What AI videos have I watched?"')
+        print('  yr "prompt engineering"')
+        print('  yr "https://youtube.com/watch?v=VIDEO_ID"')
+        return
+    
+    elif "unclear" in action:
+        print(f"🤔 I'm not sure what you want to do with: '{query}'\n")
+        print("Try being more specific:")
+        print("  - Ask a question: 'What videos about X have I watched?'")
+        print("  - Name a topic: 'machine learning'")
+        print("  - Provide a URL: 'https://youtube.com/watch?v=...'")
+        return
+    
+    elif "research-video" in action:
+        print("🎥 Researching video...\n")
+        # Extract video ID
+        import re
+        video_id_pattern = r'([a-zA-Z0-9_-]{11})'
+        match = re.search(video_id_pattern, query)
+        if match:
+            cli.research_video(match.group(1))
         else:
-            # Try to extract video ID
-            video_id_pattern = r'([a-zA-Z0-9_-]{11})'
-            match = re.search(video_id_pattern, query)
-            if match:
-                cli.research_video(match.group(1))
-            else:
-                print("❌ Could not extract video URL or ID from query")
-                print("💡 Falling back to topic research...")
-                cli.research_topic(query)
-    elif action == "research-topic":
+            print("❌ Could not extract video ID from query")
+    
+    elif "research-topic" in action:
+        print(f"🔍 Researching topic: {query}\n")
         cli.research_topic(query)
-    elif action == "analyze":
+    
+    elif "analyze" in action:
+        print(f"📊 Analyzing your YouTube history...\n")
         cli.analyze_and_research(query)
+    
+    else:
+        # Fallback to pattern matching
+        if "?" in query or any(word in query.lower() for word in ["what", "how", "why", "should", "have i", "did i"]):
+            print(f"📊 Analyzing based on your question...\n")
+            cli.analyze_and_research(query)
+        else:
+            print(f"🔍 Researching topic: {query}\n")
+            cli.research_topic(query)
 
 
 def main():
