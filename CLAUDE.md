@@ -26,29 +26,53 @@ This repository has a **STRICT** directory structure that MUST be followed. AI m
 
 ### 2. MANDATORY DIRECTORY STRUCTURE
 
+**See [docs/REPOSITORY_STRUCTURE.md](docs/REPOSITORY_STRUCTURE.md) for complete details**
+
 ```
 ~/code/
-├── docs/           # ALL documentation goes here
-│   ├── README.md   # Main project documentation
-│   ├── talk/       # Talk-specific documentation
-│   └── *.md        # All other docs
+├── docs/           # Documentation (categorized by purpose)
+│   ├── architecture/   # System design
+│   ├── api/           # API documentation
+│   ├── guides/        # How-to guides
+│   └── reference/     # Reference docs
 │
 ├── talk/           # Main Talk framework code
 │   ├── talk.py     # Current version
 │   └── talk_v*.py  # Version history
 │
-├── tests/          # ALL tests go here
-│   ├── input/      # Test input data (gitignored)
-│   ├── output/     # Test output data (gitignored)
-│   └── test_*.py   # Test files
+├── tests/          # Tests (categorized by type)
+│   ├── unit/          # Single component tests
+│   ├── integration/   # Multi-component tests
+│   ├── e2e/          # End-to-end tests
+│   └── data/         # Test data (gitignored)
+│       ├── input/    # Input fixtures
+│       └── output/   # Results (date-organized)
 │
-├── special_agents/ # Special agent implementations
+├── special_agents/ # Agents (categorized by function)
+│   ├── core/         # Essential agents
+│   ├── research/     # Experimental agents
+│   ├── tools/        # Utility agents
+│   └── examples/     # Reference implementations
+│
 ├── miniapps/       # Mini applications
-├── examples/       # Example code
 └── scripts/        # Utility scripts
 ```
 
-### 3. FILE PLACEMENT RULES
+### 3. CATEGORIZATION RULES
+
+Before creating ANY file, **FIND THE RIGHT CATEGORY:**
+
+1. **Check existing categories** - Look for a directory that fits
+2. **Use orthogonal categories** - File should clearly belong in ONE place
+3. **Follow the decision tree** in [docs/REPOSITORY_STRUCTURE.md](docs/REPOSITORY_STRUCTURE.md)
+
+#### For Test Output:
+```
+tests/data/output/archive/YYYY/MM-month/YYYY-MM-DD_HHMM_category_subcategory/
+```
+Example: `tests/data/output/archive/2025/08-aug/2025-08-09_1423_unit_agents/`
+
+### 4. FILE PLACEMENT RULES
 
 #### Documentation
 - **ALWAYS** place in `docs/`
