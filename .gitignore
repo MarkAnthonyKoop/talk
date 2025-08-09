@@ -165,13 +165,23 @@ c2/codex/
 # Output and result files
 *_result.json
 *_results.json
+*result*.json
+*output*.json
 v[0-9]*_*.json
+test_output/
+test_results/
+tests/output/
+tests/outputs/
 
-# Temporary files
+# Temporary and backup files
 *.tmp
 *.tmp.*
 *.bak
+*.bak.*
 *.backup
+*_backup.*
+*_old.*
+*.orig
 
 # Image files
 *.jpg
