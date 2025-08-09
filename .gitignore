@@ -161,3 +161,50 @@ c2/codex/
 
 # Hidden directories (snapshots, etc.)
 .*/
+
+# Output and result files
+*_result.json
+*_results.json
+v[0-9]*_*.json
+
+# Temporary files
+*.tmp
+*.tmp.*
+*.bak
+*.backup
+
+# Image files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.svg
+*.ico
+*.webp
+
+# Windows Zone Identifier files
+*:Zone.Identifier
+
+# Model and checkpoint files
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.hdf5
+*.pb
+*.onnx
+*.pkl
+*.pickle
+*.model
+*.weights
+
+# Large binary files
+*.bin
+*.dat
+*.db
+
+# HRM specific files
+hrm_*.pt
+hrm_*.json
+hrm_checkpoint_path.txt
