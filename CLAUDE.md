@@ -30,11 +30,13 @@ This repository has a **STRICT** directory structure that MUST be followed. AI m
 
 ```
 ~/code/
-├── docs/           # Documentation (categorized by purpose)
-│   ├── architecture/   # System design
-│   ├── api/           # API documentation
-│   ├── guides/        # How-to guides
-│   └── reference/     # Reference docs
+├── docs/           # Documentation
+│   ├── agent/         # Core Agent class docs (critical)
+│   ├── plan_runner/   # PlanRunner docs (critical)
+│   ├── talk/          # Talk framework docs (critical)
+│   ├── special_agents/# Special agents docs (critical)
+│   ├── architecture/  # System design decisions
+│   └── guides/        # How-to guides
 │
 ├── talk/           # Main Talk framework code
 │   ├── talk.py     # Current version
@@ -48,11 +50,13 @@ This repository has a **STRICT** directory structure that MUST be followed. AI m
 │       ├── input/    # Input fixtures
 │       └── output/   # Results (date-organized)
 │
-├── special_agents/ # Agents (categorized by function)
-│   ├── core/         # Essential agents
-│   ├── research/     # Experimental agents
-│   ├── tools/        # Utility agents
-│   └── examples/     # Reference implementations
+├── special_agents/ # Special agent implementations
+│   ├── *.py          # Individual agents (21 files)
+│   ├── code_analysis/# Code analysis agents
+│   ├── collaboration/# Collaboration agents
+│   ├── reminiscing/ # Memory/context agents
+│   ├── research/     # Research agents
+│   └── research_agents/# YouTube and web research
 │
 ├── miniapps/       # Mini applications
 └── scripts/        # Utility scripts
@@ -76,7 +80,13 @@ Example: `tests/data/output/archive/2025/08-aug/2025-08-09_1423_unit_agents/`
 
 #### Documentation
 - **ALWAYS** place in `docs/`
-- Talk-specific docs go in `docs/talk/`
+- Core component docs go in:
+  - `docs/agent/` - Core Agent class documentation
+  - `docs/plan_runner/` - PlanRunner documentation
+  - `docs/talk/` - Talk framework documentation
+  - `docs/special_agents/` - Special agents documentation
+- Architecture decisions in `docs/architecture/`
+- How-to guides in `docs/guides/`
 - NEVER create .md files at top level (except README.md, CLAUDE.md)
 
 #### Test Files
