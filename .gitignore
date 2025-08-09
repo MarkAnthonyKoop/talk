@@ -168,10 +168,15 @@ c2/codex/
 *result*.json
 *output*.json
 v[0-9]*_*.json
+
+# Test directories and data
+tests/input/
+tests/output/
 test_output/
 test_results/
-tests/output/
-tests/outputs/
+data/
+*.npy
+*.npz
 
 # Temporary and backup files
 *.tmp
