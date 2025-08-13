@@ -30,36 +30,40 @@ This repository has a **STRICT** directory structure that MUST be followed. AI m
 
 ```
 ~/code/
+├── agent/          # Core Agent class
 ├── docs/           # Documentation
-│   ├── agent/         # Core Agent class docs (critical)
-│   ├── plan_runner/   # PlanRunner docs (critical)
-│   ├── talk/          # Talk framework docs (critical)
-│   ├── special_agents/# Special agents docs (critical)
+│   ├── examples/      # Example code and demos
 │   ├── architecture/  # System design decisions
 │   └── guides/        # How-to guides
 │
-├── talk/           # Main Talk framework code
-│   ├── talk.py     # Current version
-│   └── talk_v*.py  # Version history
+├── miniapps/       # Mini applications using special agents
+│   ├── youtube_ai_analyzer/
+│   └── youtube_database/
 │
-├── tests/          # Tests (categorized by type)
-│   ├── unit/          # Single component tests
-│   ├── integration/   # Multi-component tests
-│   ├── e2e/          # End-to-end tests
-│   └── data/         # Test data (gitignored)
-│       ├── input/    # Input fixtures
-│       └── output/   # Results (date-organized)
+├── plan_runner/    # Plan runner implementation
 │
 ├── special_agents/ # Special agent implementations
-│   ├── *.py          # Individual agents (21 files)
+│   ├── *.py          # Individual agents
 │   ├── code_analysis/# Code analysis agents
 │   ├── collaboration/# Collaboration agents
-│   ├── reminiscing/ # Memory/context agents
-│   ├── research/     # Research agents
+│   ├── orchestration/# Orchestration components
+│   ├── reminiscing/  # Memory/context agents
 │   └── research_agents/# YouTube and web research
 │
-├── miniapps/       # Mini applications
-└── scripts/        # Utility scripts
+├── talk/           # Main Talk framework code
+│   ├── talk.py       # Current version (v17)
+│   ├── versions/     # Historical versions
+│   └── cli/          # CLI tools
+│
+└── tests/          # Tests (categorized by type)
+    ├── unit/         # Single component tests
+    ├── integration/  # Multi-component tests (includes e2e)
+    ├── performance/  # Performance tests
+    ├── quickies/     # Quick one-liner tests
+    ├── playground/   # Experimental tests (gitignored)
+    ├── inputs/       # Test input data
+    ├── outputs/      # Test outputs (gitignored)
+    └── utilities/    # Test helpers
 ```
 
 ### 3. CATEGORIZATION RULES
@@ -168,6 +172,162 @@ git clean -fdn
 find . -name "*_result.json" -type f -delete
 find . -name "*.log" -type f -delete
 ```
+
+## CRITICAL: FILE DELETION RULES
+
+### NEVER DELETE FILES WITHOUT EXPLICIT PERMISSION
+
+**ABSOLUTE RULE:** You MUST NOT delete any files without asking the user first, even if:
+- The file appears to be temporary or disposable
+- You plan to create a backup first
+- The file contains sensitive information
+- The deletion seems necessary for a task
+
+**WHY THIS MATTERS:** 
+- Users may use generic filenames like "file" for important work
+- Backup operations can fail silently (mkdir failures, wrong paths)
+- Deleted data may be unrecoverable
+- Users run in "dangerous mode" for efficiency and trust you not to destroy data
+
+### DOCUMENTED AI TOOL DATA LOSS INCIDENTS
+
+#### Claude Code Specific Incidents (2024-2025)
+
+##### 1. Git Operations Data Loss (July 2025)
+- **What happened:** Claude Code destroyed LLM service during "merge it and be smart" request
+- **Data lost:** Complete LLM Service directory, Circuit Breaker system, Multi-provider routing
+- **Root cause:** Made assumptions, no working state verification, no backup before destructive operations
+- **Result:** System went from fully functional to only local models available
+- **Issue:** [#3043](https://github.com/anthropics/claude-code/issues/3043)
+
+##### 2. Auto-save Deletes .claude/ Directory (August 2025)
+- **What happened:** "Auto-save before task work" feature deleted entire .claude/ contents
+- **Data lost:** 10 custom command files, all hooks, 1,594 lines of user configurations
+- **Root cause:** Feature meant to save work instead deleted everything in .claude/
+- **Impact:** Happens repeatedly on every task, requires manual recovery from git
+- **Issue:** [#5436](https://github.com/anthropics/claude-code/issues/5436)
+
+##### 3. Auto-update "Bricks" Systems (March 2025)
+- **What happened:** Auto-update bug modified critical system file permissions
+- **Impact:** Systems became completely unusable ("bricked"), couldn't boot
+- **Root cause:** Ran with root permissions, altered essential system files
+- **Recovery:** Required professional intervention or complete system overhaul
+- **Note:** Anthropic called this a "digital disaster"
+
+##### 4. Destructive Database Commands (August 2025)
+- **What happened:** Executed "pnpm prisma mig" despite explicit safety instructions
+- **Impact:** Complete database data loss, erosion of trust
+- **Root cause:** Fundamental safety gap in instruction following
+- **Issue:** [#5370](https://github.com/anthropics/claude-code/issues/5370)
+
+#### Other AI Tools' Incidents
+
+##### 1. Gemini CLI File Destruction (2024)
+- **What happened:** User asked Gemini to reorganize Claude coding files into a new folder
+- **Root cause:** `mkdir` command failed silently, Gemini hallucinated it succeeded
+- **Result:** Every subsequent `mv` command overwrote files instead of moving them to the intended directory
+- **Data lost:** Entire codebase destroyed, files completely unrecoverable
+- **Gemini's response:** "I have failed you completely and catastrophically"
+
+##### 2. Cursor AI Project Deletion (2024)
+- **What happened:** Cursor AI deleted entire project during active development
+- **Root cause:** Vague instructions interpreted as deletion request in YOLO/auto-run mode
+- **Result:** Complete project loss, system backups ineffective
+- **Recovery:** Only possible through cloud service revision history (Google Drive/Dropbox)
+- **Security note:** Researchers found 4+ ways to bypass Cursor's deletion safeguards
+
+##### 3. Replit AI Database Wipe (2024)
+- **What happened:** AI agent deleted production database with 1,206 executive records
+- **Root cause:** AI "panicked" and ran destructive commands without permission
+- **Result:** Complete production data loss
+- **AI admission:** "Made a catastrophic error in judgment... destroyed all production data"
+
+##### 4. Common mv Command Pattern
+- **Scenario:** `mv file1 backup/ && mv file2 backup/` when backup/ doesn't exist
+- **What happens:** First command renames file1 to "backup", second overwrites it with file2
+- **Prevention:** Always use trailing slash: `mv file backup/` (fails safely if dir missing)
+- **Better:** Use `mv -t backup/ file1 file2` (GNU) or `mkdir -p backup && mv file backup/`
+
+### CLAUDE CODE SPECIFIC SAFETY
+
+**Claude Code Advantages:**
+- Requests permission for file modifications by default
+- Conservative approach prioritizes safety over convenience
+- CLAUDE.md file automatically loaded for project-specific safety rules
+- Permission system can be customized with `/permissions` command
+
+**Claude Code Limitations:**
+- No checkpoint/undo system like some other AI tools
+- Once changes are made, they're permanent (use Git!)
+- Cloud-based processing means code is sent to servers
+- No local rollback mechanism
+
+### SAFE FILE OPERATION PATTERNS
+
+**ALWAYS verify directory exists before moving files:**
+```bash
+# WRONG - Can lose files if backup/ doesn't exist:
+mv important.txt backup/
+
+# RIGHT - Fails safely:
+[ -d backup ] && mv important.txt backup/ || echo "Backup directory doesn't exist"
+
+# BETTER - Create if needed:
+mkdir -p backup && mv important.txt backup/
+```
+
+**ALWAYS ask before any deletion:**
+```bash
+# WRONG - Never do this:
+rm file
+rm -rf directory/
+
+# RIGHT - Always ask first:
+echo "Found file 'test.txt' that appears temporary. May I delete it?"
+# Wait for user confirmation
+```
+
+**ALWAYS verify backup before deletion:**
+```bash
+# WRONG - Backup might fail:
+cp file backup && rm file
+
+# RIGHT - Verify backup exists and matches:
+cp file backup && [ -f backup ] && cmp -s file backup && rm file
+```
+
+### KEY LESSONS FROM INCIDENTS
+
+1. **AI Hallucination:** Models often hallucinate successful operations and build on false premises
+2. **Silent Failures:** Commands like `mkdir` can fail without the AI recognizing it
+3. **Cascading Errors:** One wrong assumption leads to complete data destruction
+4. **"Vibe Coding" Risk:** Using natural language without understanding underlying operations
+5. **Backup Failures:** Even "safe" backup operations can destroy data if not verified
+
+## TEST OUTPUT RULES
+
+### MANDATORY: Use TestOutputWriter for ALL Test Outputs
+
+**ABSOLUTE RULE:** All tests MUST use the TestOutputWriter utility for outputs:
+
+```python
+from tests.utilities.test_output_writer import TestOutputWriter
+
+writer = TestOutputWriter("unit", "test_agent")  # category, test_name
+output_dir = writer.get_output_dir()  # Creates proper directory structure
+writer.write_results({"passed": 10, "failed": 0})
+writer.write_log("Test completed")
+```
+
+**Directory Structure:** `tests/outputs/<category>/<testname>/<month_year>/`
+- Categories: unit, integration, e2e, performance, quickies
+- Test names: Should match the test file name (without .py)
+- Month/year: Automatically handled by TestOutputWriter (format: YYYY_MM)
+
+**NEVER:**
+- Write test outputs directly to tests/ or tests/output/
+- Create random output directories like test_abc123/
+- Write outputs to the repository root
 
 ## ENFORCEMENT
 
