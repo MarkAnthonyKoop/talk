@@ -61,8 +61,8 @@ This repository has a **STRICT** directory structure that MUST be followed. AI m
     ├── performance/  # Performance tests
     ├── quickies/     # Quick one-liner tests
     ├── playground/   # Experimental tests (gitignored)
-    ├── inputs/       # Test input data
-    ├── outputs/      # Test outputs (gitignored)
+    ├── input/       # Test input data
+    ├── output/      # Test outputs (gitignored)
     └── utilities/    # Test helpers
 ```
 
@@ -76,9 +76,9 @@ Before creating ANY file, **FIND THE RIGHT CATEGORY:**
 
 #### For Test Output:
 ```
-tests/data/output/archive/YYYY/MM-month/YYYY-MM-DD_HHMM_category_subcategory/
+tests/output/<category>/<testname>/<year_month>
 ```
-Example: `tests/data/output/archive/2025/08-aug/2025-08-09_1423_unit_agents/`
+Example: `tests/output/special_agents/test_code_agent/2025_08/logs/xyz.log'
 
 ### 4. FILE PLACEMENT RULES
 
@@ -120,60 +120,18 @@ Example: `tests/data/output/archive/2025/08-aug/2025-08-09_1423_unit_agents/`
 
 ### 5. COMMON MISTAKES TO AVOID
 
-❌ **WRONG:**
-```python
-# Creating test file at top level
-with open('test_results.json', 'w') as f:
-    json.dump(results, f)
-```
-
-✅ **CORRECT:**
-```python
-# Creating test file in proper location
-import os
-os.makedirs('tests/output', exist_ok=True)
-with open('tests/output/test_results.json', 'w') as f:
-    json.dump(results, f)
-```
-
-❌ **WRONG:**
-```python
-# Creating documentation at top level
-with open('analysis.md', 'w') as f:
-    f.write(analysis)
-```
-
-✅ **CORRECT:**
-```python
-# Creating documentation in docs
-with open('docs/analysis.md', 'w') as f:
-    f.write(analysis)
-```
+WRONG!!!!!!!!!
+      run_test > .
+      run_test > ~/code
+DO NOT PUT ANY FILES in ~/code
 
 ### 6. GIT COMMIT GUIDELINES
 
 When committing:
-- NEVER commit output files
-- NEVER commit temporary files
-- NEVER commit large data files
+- NEVER add or commit output files
+- NEVER add or commit temporary files
+- NEVER add or commit large data files
 - Check .gitignore is working properly
-
-### 7. CLEANUP COMMANDS
-
-If you've made a mess:
-```bash
-# Remove all untracked files (careful!)
-git clean -fd
-
-# Check what would be removed first
-git clean -fdn
-
-# Remove specific patterns
-find . -name "*_result.json" -type f -delete
-find . -name "*.log" -type f -delete
-```
-
-## CRITICAL: FILE DELETION RULES
 
 ### NEVER DELETE FILES WITHOUT EXPLICIT PERMISSION
 
@@ -188,8 +146,6 @@ find . -name "*.log" -type f -delete
 - Backup operations can fail silently (mkdir failures, wrong paths)
 - Deleted data may be unrecoverable
 - Users run in "dangerous mode" for efficiency and trust you not to destroy data
-
-### DOCUMENTED AI TOOL DATA LOSS INCIDENTS
 
 #### Claude Code Specific Incidents (2024-2025)
 
@@ -329,6 +285,13 @@ writer.write_log("Test completed")
 - Create random output directories like test_abc123/
 - Write outputs to the repository root
 
+## TALK SCRATCH
+
+special agents frequently send files to each other.   the temporary place for these files is .talk_scratch.   the subdirectories should follow the same naming converntions as ~/code/tests/output:
+ 
+~/.talk_scratch/<category>/<name>/<year_month>/<any_other_desired_subdirs>/<filename>
+
+
 ## ENFORCEMENT
 
 This file is automatically loaded by Claude Code. Following these rules is MANDATORY, not optional. The repository maintainer will reject any changes that violate this structure.
@@ -337,6 +300,9 @@ This file is automatically loaded by Claude Code. Following these rules is MANDA
 
 See `docs/README.md` for project documentation.
 
+If this is a new conversation, read docs/README.md to better understand the codebase.   ALERT the user if there inconsistencies between this file and docs/README.md!
+
 ---
 
 **Remember:** When in doubt, put files in subdirectories, NOT at the top level!
+

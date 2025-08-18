@@ -46,7 +46,7 @@ class TestOutputWriter:
             # Find tests directory relative to this file
             current_file = Path(__file__)
             tests_dir = current_file.parent.parent
-            base_dir = tests_dir / "outputs"
+            base_dir = tests_dir / "output"
         else:
             base_dir = Path(base_dir)
             

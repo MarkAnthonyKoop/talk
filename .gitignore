@@ -177,6 +177,7 @@ test_output/
 test_results/
 data/
 *.npy
+*.db
 *.npz
 
 # Temporary and backup files
@@ -219,6 +220,13 @@ data/
 *.bin
 *.dat
 *.db
+
+# Old/backup directories and files
+*old/
+old*
+*~
+*.backup
+*.bak
 
 # HRM specific files
 hrm_*.pt
