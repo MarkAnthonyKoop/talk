@@ -1,373 +1,382 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
-Talk v17 - The Singularity: Civilization-Scale Code Generation
+Talk v2 - Enhanced orchestration with RefinementAgent and BranchingAgent.
 
-This version orchestrates multiple Talk v16 instances to build entire technological
-civilizations with 1,000,000+ lines of code.
-
-Architecture:
-- v17 decomposes task into 4-8 "technology galaxies" 
-- Each galaxy is built by a v16 instance (200-300k lines)
-- Each v16 runs 4 v15 instances in parallel (50k each)
-- Total: 4-8 v16s × 4 v15s × 50k = 800,000-1,600,000 lines
-
-Usage:
-    talk_v17 "build an agentic orchestration system"  # Builds Google Borg + Kubernetes + More (1M+ lines)
-    talk_v17 "build a social media platform"          # Builds Meta + Twitter + TikTok (1.2M+ lines)
-    talk_v17 "build a cloud platform"                 # Builds AWS + GCP + Azure (1.5M+ lines)
-
-This is not code generation. This is CIVILIZATION CREATION at planetary scale.
+This version uses:
+- Planning agents for task assessment
+- RefinementAgent for iterative development cycles
+- BranchingAgent for control flow decisions
+- Simplified Step syntax (agent key only for linear flow)
 """
 
+import argparse
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
-from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Import agent framework
+from agent.agent import Agent
+from agent.settings import Settings
+from agent.output_manager import OutputManager
 
-from special_agents.meta_meta_orchestrator_agent import MetaMetaOrchestratorAgent
+# Import runtime components
+from plan_runner.blackboard import Blackboard
+from plan_runner.step import Step
+from plan_runner.plan_runner import PlanRunner
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-log = logging.getLogger(__name__)
+# Import specialized agents
+from special_agents.assessor_agent import AssessorAgent
+from special_agents.execution_planning_agent import ExecutionPlanningAgent
+from special_agents.refinement_agent import RefinementAgent
+from special_agents.branching_agent import BranchingAgent
+from special_agents.file_agent import FileAgent
+from special_agents.research_agents.web_search_agent import WebSearchAgent
+
+log = logging.getLogger("talk_v2")
 
 
-class TalkV17Singularity:
-    """
-    Talk v17 - The Singularity
-    
-    Orchestrates multiple v16 instances to build civilization-scale platforms.
-    Each v16 runs 4 v15s, each v15 generates 50k lines.
-    Total output: 1,000,000+ lines of code.
-    
-    This is the pinnacle of code generation technology.
-    """
+class TalkOrchestratorV2:
+    """Enhanced Talk orchestrator with iterative refinement."""
     
     def __init__(self,
                  task: str,
-                 model: str = "gemini-2.0-flash",
                  working_dir: Optional[str] = None,
-                 max_v16_instances: int = 4,
-                 parallel_mode: str = "balanced",
-                 verbose: bool = True):
-        """
-        Initialize Talk v17.
-        
-        Args:
-            task: The civilization-scale task to build
-            model: AI model to use
-            working_dir: Output directory
-            max_v16_instances: Maximum parallel v16 instances (each runs 4 v15s)
-            parallel_mode: "aggressive" (all parallel), "balanced" (batches), "sequential"
-            verbose: Show detailed output
-        """
+                 model: str = "claude-3-5-sonnet-20241022",
+                 interactive: bool = False,
+                 enable_web_search: bool = True):
+        """Initialize Talk v2."""
         self.task = task
-        self.model = model
-        self.working_dir = working_dir
-        self.max_v16_instances = max_v16_instances
-        self.parallel_mode = parallel_mode
-        self.verbose = verbose
+        self.interactive = interactive
+        self.enable_web_search = enable_web_search
+        self.start_time = time.time()
         
-        log.info(f"Talk v17 Singularity initialized")
-        log.info(f"Task: {task}")
-        log.info(f"v16 instances: {max_v16_instances}")
-        log.info(f"Total v15 instances: {max_v16_instances * 4}")
-        log.info(f"Target: 1,000,000+ lines")
+        # Set model globally
+        if model:
+            os.environ["TALK_FORCE_MODEL"] = model
+        
+        # Initialize output manager
+        self.output_manager = OutputManager()
+        
+        # Create session directory
+        self.session_dir, self.working_dir = self._create_session(working_dir)
+        
+        # Setup logging
+        self._setup_logging()
+        
+        log.info(f"Session directory: {self.session_dir}")
+        log.info(f"Working directory: {self.working_dir}")
+        
+        # Initialize blackboard
+        self.blackboard = Blackboard()
+        
+        # Initialize agents
+        self.agents = self._create_agents(model)
+        
+        # Create execution plan
+        self.plan = self._create_plan()
     
-    def run(self) -> Dict[str, Any]:
-        """Execute civilization-scale generation."""
-        try:
-            start_time = time.time()
-            
-            if self.verbose:
-                self._print_header()
-            
-            # Create meta-meta orchestrator
-            orchestrator = MetaMetaOrchestratorAgent(
-                task=self.task,
-                working_dir=self.working_dir,
-                model=self.model,
-                max_v16_instances=self.max_v16_instances,
-                parallel_mode=self.parallel_mode
-            )
-            
-            # Run civilization construction
-            result = orchestrator.run()
-            
-            elapsed_time = time.time() - start_time
-            
-            # Enhance result
-            result["execution_time_seconds"] = elapsed_time
-            result["execution_time_hours"] = elapsed_time / 3600
-            result["model"] = self.model
-            result["v16_instances"] = self.max_v16_instances
-            result["v15_instances_total"] = self.max_v16_instances * 4
-            
-            if self.verbose:
-                self._print_summary(result)
-            
-            return result
-            
-        except Exception as e:
-            log.exception("Talk v17 execution failed")
-            return {
-                "status": "error",
-                "error": str(e),
-                "execution_time_seconds": time.time() - start_time
-            }
-    
-    def _print_header(self):
-        """Print dramatic execution header."""
-        print("\n" + "🌟"*30)
-        print("\nTALK v17 - THE SINGULARITY")
-        print("\nCIVILIZATION-SCALE CODE GENERATION")
-        print("\n" + "🌟"*30)
+    def _create_session(self, working_dir: Optional[str] = None) -> Tuple[Path, Path]:
+        """Create session directories."""
+        # Generate clean task name
+        import re
+        task_name = re.sub(r'[^\w\s-]', '', self.task.lower())
+        task_name = re.sub(r'\s+', '_', task_name)[:50]
         
-        print("\n📢 WARNING: UNPRECEDENTED SCALE AHEAD")
-        print("-"*70)
-        print("You are about to generate code at CIVILIZATION SCALE.")
-        print(f"This will orchestrate {self.max_v16_instances} Talk v16 instances.")
-        print(f"Each v16 orchestrates 4 Talk v15 instances.")
-        print(f"Total parallel v15 instances: {self.max_v16_instances * 4}")
-        print("Expected output: 1,000,000+ lines of code")
-        print("")
-        print("🎯 WHAT THIS BUILDS:")
-        print("  Not a feature. Not an app. Not a platform.")
-        print("  An ENTIRE TECHNOLOGICAL CIVILIZATION.")
-        print("")
-        print("📊 SCALE PROGRESSION:")
-        print("  Claude Code: Prototype (4k lines)")
-        print("  Talk v13-14: Application (2k lines)")
-        print("  Talk v15: Company (50k lines)")
-        print("  Talk v16: Tech Giant (200k lines)")
-        print("  Talk v17: CIVILIZATION (1M+ lines)")
-        print("")
-        print(f"🚀 YOUR TASK: {self.task}")
-        print("🔮 INTERPRETATION: Building the technology stack for an entire planet")
-        print("-"*70 + "\n")
+        # Create session directory
+        session_dir = self.output_manager.create_session_dir("talk_v2", task_name)
         
-        # Epic countdown
-        for i in range(5, 0, -1):
-            print(f"  Initiating civilization construction in {i}...")
-            time.sleep(1)
-        print("\n  💫 SINGULARITY ACHIEVED! BEGINNING CIVILIZATION CONSTRUCTION!\n")
-    
-    def _print_summary(self, result: Dict[str, Any]):
-        """Print execution summary."""
-        print("\n" + "="*80)
-        print("CIVILIZATION CONSTRUCTION COMPLETE")
-        print("="*80)
-        
-        print("\n📊 FINAL STATISTICS:")
-        print(f"  Total Lines Generated: {result.get('total_lines_generated', 0):,}")
-        print(f"  Total Files Created: {result.get('total_files_generated', 0):,}")
-        print(f"  Galaxies Built: {result.get('galaxies_built', 0)}/{result.get('galaxies_total', 0)}")
-        print(f"  v16 Instances Used: {result.get('v16_instances_used', 0)}")
-        print(f"  v15 Instances Total: {result.get('v15_instances_total', 0)}")
-        print(f"  Total Time: {result.get('execution_time_hours', 0):.2f} hours")
-        
-        print("\n🌌 TECHNOLOGY GALAXIES:")
-        if result.get("galaxy_results"):
-            for galaxy_id, galaxy_result in result["galaxy_results"].items():
-                if galaxy_result.get("status") == "success":
-                    print(f"  - {galaxy_result.get('galaxy_name', galaxy_id)}:")
-                    print(f"      Lines: {galaxy_result.get('total_lines_generated', 0):,}")
-                    print(f"      Files: {galaxy_result.get('total_files_generated', 0)}")
-        
-        print("\n✨ ACHIEVEMENT LEVEL:")
-        total_lines = result.get('total_lines_generated', 0)
-        if total_lines >= 2000000:
-            print("  🌌 GALACTIC EMPIRE - You built technology for an interstellar civilization!")
-        elif total_lines >= 1500000:
-            print("  🚀 SPACEFARING CIVILIZATION - You built technology for a multi-planetary species!")
-        elif total_lines >= 1000000:
-            print("  🌍 PLANETARY CIVILIZATION - You built Earth's entire digital infrastructure!")
-        elif total_lines >= 500000:
-            print("  🌆 MEGA-CORPORATION - You built the next Google/Amazon/Meta!")
+        # Determine working directory
+        if working_dir:
+            work_dir = Path(working_dir).resolve()
+            work_dir.mkdir(parents=True, exist_ok=True)
         else:
-            print("  🏢 TECH GIANT - You built a major technology company!")
+            work_dir = session_dir / "workspace"
         
-        print("\n🎯 COMPARISON:")
-        print(f"  vs Claude Code: {total_lines/4132:.0f}x more code")
-        print(f"  vs Talk v13: {total_lines/1039:.0f}x more code")
-        print(f"  vs Talk v15: {total_lines/50000:.0f}x more code")
-        print(f"  vs Talk v16: {total_lines/200000:.0f}x more code")
-        
-        print("\n📁 Output Directory: " + result.get('working_directory', 'unknown'))
-        print("="*80 + "\n")
+        return session_dir, work_dir
     
-    def visualize_architecture(self) -> str:
-        """Create ASCII visualization of v17 architecture."""
-        return """
-╔══════════════════════════════════════════════════════════════════════════╗
-║                      TALK v17 - THE SINGULARITY                           ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║                                                                            ║
-║                         ┌─────────────────┐                               ║
-║                         │   Talk v17      │                               ║
-║                         │  (This Level)   │                               ║
-║                         └────────┬────────┘                               ║
-║                                  │                                        ║
-║        ┌─────────────────────────┼─────────────────────────┐              ║
-║        │                         │                         │              ║
-║   ┌────▼────┐              ┌────▼────┐              ┌────▼────┐          ║
-║   │ v16 #1  │              │ v16 #2  │              │ v16 #3  │          ║
-║   │ 250k    │              │ 300k    │              │ 250k    │          ║
-║   └────┬────┘              └────┬────┘              └────┬────┘          ║
-║        │                         │                         │              ║
-║   ┌────┼────┬────┬────┐    ┌────┼────┬────┬────┐    ┌────┼────┐         ║
-║   │    │    │    │    │    │    │    │    │    │    │    │    │         ║
-║  v15  v15  v15  v15  v15  v15  v15  v15  v15  v15  v15  v15  v15        ║
-║  50k  50k  50k  50k  50k  50k  50k  50k  50k  50k  50k  50k  50k        ║
-║                                                                            ║
-║  Total: 4 v16 instances × 4 v15 each = 16 parallel v15 instances         ║
-║  Output: 1,000,000+ lines of production code                             ║
-║                                                                            ║
-╚══════════════════════════════════════════════════════════════════════════╝
-"""
+    def _setup_logging(self):
+        """Setup session logging."""
+        log_file = self.output_manager.get_logs_dir(self.session_dir) / "talk_v2.log"
+        
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler(log_file)
+            ],
+            force=True
+        )
     
-    def compare_all_versions(self) -> None:
-        """Show comparison of all Talk versions."""
-        print("\n" + "="*80)
-        print("THE COMPLETE TALK EVOLUTION")
-        print("="*80)
+    def _create_agents(self, model: str) -> Dict[str, Agent]:
+        """Create all agents for v2 workflow."""
+        # Get provider config
+        if "gpt" in model.lower():
+            provider_config = {"provider": {"openai": {"model_name": model}}}
+        elif "claude" in model.lower():
+            provider_config = {"provider": {"anthropic": {"model_name": model}}}
+        else:
+            provider_config = {"provider": {"google": {"model_name": model}}}
         
-        versions = [
-            ("Claude Code", 4132, 1, 0, "2 min", "Prototype"),
-            ("Talk v13", 1039, 1, 0, "3 min", "Components"),
-            ("Talk v14", 2000, 1, 0, "5 min", "Quality"),
-            ("Talk v15", 50000, 1, 0, "2 hours", "Enterprise"),
-            ("Talk v16", 200000, 1, 4, "4 hours", "Tech Giant"),
-            ("Talk v17", 1000000, 4, 16, "8+ hours", "CIVILIZATION")
-        ]
+        # Convert working directory path
+        working_dir_str = str(self.working_dir).replace('\\\\wsl.localhost\\Ubuntu', '')
+        if working_dir_str.startswith('\\'):
+            working_dir_str = working_dir_str.replace('\\', '/')
         
-        print(f"\n{'Version':<12} {'Lines':>10} {'v16s':>5} {'v15s':>5} {'Time':>10} {'Scale':<20}")
-        print("-"*75)
+        agents = {
+            # Planning agents
+            "assessor": AssessorAgent(
+                overrides=provider_config,
+                name="TaskAssessor"
+            ),
+            "planner": ExecutionPlanningAgent(
+                overrides=provider_config,
+                name="ExecutionPlanner"
+            ),
+            
+            # Core development agent
+            "refinement": RefinementAgent(
+                base_dir=working_dir_str,
+                max_iterations=5,
+                overrides=provider_config,
+                name="RefinementOrchestrator"
+            ),
+            
+            # Note: BranchingAgent will be created in _create_plan() after steps exist
+            
+            # Utility agents
+            "file": FileAgent(
+                base_dir=working_dir_str,
+                overrides=provider_config,
+                name="FinalFileAgent"
+            )
+        }
         
-        for version, lines, v16s, v15s, time, scale in versions:
-            print(f"{version:<12} {lines:>10,} {v16s:>5} {v15s:>5} {time:>10} {scale:<20}")
+        # Add optional research agent
+        if self.enable_web_search:
+            agents["researcher"] = WebSearchAgent(
+                overrides=provider_config,
+                name="ResearchAgent"
+            )
         
-        print("\n📈 EXPONENTIAL SCALING:")
-        print("  Each version is ~5x larger than the previous")
-        print("  v17 is 242x larger than Claude Code")
-        print("  v17 is 1,000x larger than v13")
+        return agents
+    
+    def _create_plan(self) -> List[Step]:
+        """Create v2 execution plan with simplified syntax."""
+        steps = []
         
-        print("\n🎯 WHAT EACH BUILDS:")
-        print("  Claude Code: A feature")
-        print("  v13-14: An application")
-        print("  v15: A company")
-        print("  v16: A tech giant")
-        print("  v17: A CIVILIZATION")
-        print("="*80 + "\n")
+        # Phase 1: Assessment and Planning
+        steps.append(Step(agent_key="assessor"))     # Assess task complexity
+        steps.append(Step(agent_key="planner"))      # Generate execution plan
+        
+        # Optional research step (determined dynamically)
+        if self.enable_web_search:
+            steps.append(Step(
+                agent_key="researcher",
+                label="research_phase",  # Label for potential skip
+                on_success="development_cycle"
+            ))
+        
+        # Phase 2: Iterative Development (with label for looping)
+        steps.append(Step(
+            agent_key="refinement",
+            label="development_cycle"
+        ))
+        
+        # Phase 3: Branching Decision
+        steps.append(Step(
+            agent_key="branching",
+            label="decision_point",
+            # Branching logic handled by agent's output
+        ))
+        
+        # Phase 4: Final File Application
+        steps.append(Step(
+            agent_key="file",
+            label="final_apply"
+        ))
+        
+        # Now create BranchingAgent with the complete plan
+        branch_step = next((s for s in steps if s.label == "decision_point"), None)
+        if branch_step:
+            # Get provider config (same as other agents)
+            model = os.environ.get("TALK_FORCE_MODEL", "gemini-2.0-flash")
+            if "gpt" in model.lower():
+                provider_config = {"provider": {"openai": {"model_name": model}}}
+            elif "claude" in model.lower():
+                provider_config = {"provider": {"anthropic": {"model_name": model}}}
+            else:
+                provider_config = {"provider": {"google": {"model_name": model}}}
+            
+            # Create BranchingAgent with step and plan references
+            self.agents["branching"] = BranchingAgent(
+                step=branch_step,
+                plan=steps,
+                overrides=provider_config,
+                name="FlowController"
+            )
+        
+        return steps
+    
+    def _handle_branching(self, decision_output: str) -> Optional[str]:
+        """Process branching agent decision and return next step label."""
+        try:
+            decision = json.loads(decision_output)
+            decision_type = decision.get("decision", "continue")
+            target = decision.get("target")
+            
+            if decision_type == "complete":
+                return None  # End workflow
+            elif decision_type == "loop_refinement":
+                return target or "development_cycle"
+            elif decision_type == "restart":
+                return target or "assessor"
+            elif decision_type == "escalate":
+                print(f"\n[ESCALATION] {decision.get('reason', 'Human review needed')}")
+                if self.interactive:
+                    input("Press Enter to continue...")
+                return None
+            else:  # continue
+                return None  # Continue to next step
+                
+        except json.JSONDecodeError:
+            log.warning("Failed to parse branching decision")
+            return None
+    
+    def run(self) -> int:
+        """Run the v2 orchestrator."""
+        print(f"\n[TASK] {self.task}")
+        print(f"[SESSION] {self.session_dir}")
+        print(f"[WORKSPACE] {self.working_dir}")
+        print("[TALK v2] Starting enhanced orchestration...\n")
+        
+        try:
+            # Custom execution with branching support
+            current_step_idx = 0
+            last_output = self.task
+            
+            while current_step_idx < len(self.plan):
+                step = self.plan[current_step_idx]
+                
+                print(f"[RUNNING] {step.label or f'step_{current_step_idx}'} ({step.agent_key})")
+                
+                # Execute step
+                agent = self.agents[step.agent_key]
+                output = agent.run(last_output)
+                self.blackboard.add_sync(step.label or f"step_{current_step_idx}", output)
+                
+                # Handle branching if this is the branching agent
+                if step.agent_key == "branching":
+                    next_label = self._handle_branching(output)
+                    if next_label:
+                        # Find step with target label
+                        for i, s in enumerate(self.plan):
+                            if s.label == next_label:
+                                current_step_idx = i
+                                print(f"[BRANCHING] Jumping to {next_label}")
+                                break
+                        else:
+                            log.warning(f"Branch target '{next_label}' not found")
+                            current_step_idx += 1
+                    else:
+                        # Check if branching said complete
+                        try:
+                            decision = json.loads(output)
+                            if decision.get("decision") == "complete":
+                                print("[COMPLETE] Task completed successfully!")
+                                break
+                        except:
+                            pass
+                        current_step_idx += 1
+                else:
+                    # Normal flow or check on_success
+                    if step.on_success:
+                        # Find target step
+                        for i, s in enumerate(self.plan):
+                            if s.label == step.on_success:
+                                current_step_idx = i
+                                break
+                        else:
+                            current_step_idx += 1
+                    else:
+                        current_step_idx += 1
+                
+                last_output = output
+            
+            print("\n[DONE] Workflow completed!")
+            print(f"Session saved in: {self.session_dir}")
+            print(f"Workspace: {self.working_dir}")
+            
+            return 0
+            
+        except KeyboardInterrupt:
+            print("\n[INTERRUPTED] Execution stopped by user")
+            return 130
+        except Exception as e:
+            log.exception("Unhandled exception")
+            print(f"\n[ERROR] {str(e)}")
+            return 1
+        finally:
+            # Save blackboard state
+            self._save_blackboard()
+    
+    def _save_blackboard(self):
+        """Save blackboard state to file."""
+        try:
+            blackboard_file = self.session_dir / "blackboard.json"
+            entries = [
+                {
+                    "label": entry.label,
+                    "author": entry.author,
+                    "content": entry.content,
+                    "timestamp": str(entry.ts)
+                }
+                for entry in self.blackboard.entries()
+            ]
+            
+            with open(blackboard_file, "w") as f:
+                json.dump({
+                    "task": self.task,
+                    "session_dir": str(self.session_dir),
+                    "working_dir": str(self.working_dir),
+                    "entries": entries
+                }, f, indent=2)
+                
+            print(f"Blackboard saved to: {blackboard_file}")
+        except Exception as e:
+            log.warning(f"Failed to save blackboard: {e}")
 
 
 def main():
-    """Talk v17 Singularity CLI."""
-    import argparse
-    
+    """CLI entry point for Talk v2."""
     parser = argparse.ArgumentParser(
-        description="Talk v17 Singularity - Build civilization-scale platforms",
-        epilog="""
-Examples:
-  talk_v17 "build an agentic orchestration system"  # Google Borg + More (1M+ lines)
-  talk_v17 "build a social media platform"          # Meta + Twitter + TikTok (1.2M+ lines)
-  talk_v17 "build a cloud platform"                 # AWS + GCP + Azure (1.5M+ lines)
-  talk_v17 "build an operating system"              # Windows + Linux + MacOS (2M+ lines)
-        """
+        description="Talk v2 - Enhanced multi-agent orchestration"
     )
-    
-    parser.add_argument("task", help="Civilization-scale task description")
-    
-    parser.add_argument("--model", default="gemini-2.0-flash",
-                       help="AI model to use")
-    
-    parser.add_argument("--working-dir",
-                       help="Output directory")
-    
-    parser.add_argument("--v16-instances", type=int, default=4,
-                       help="Number of v16 instances to run (each runs 4 v15s)")
-    
-    parser.add_argument("--parallel-mode", 
-                       choices=["aggressive", "balanced", "sequential"],
-                       default="balanced",
-                       help="Parallelization strategy")
-    
-    parser.add_argument("--compare", action="store_true",
-                       help="Show comparison with other versions")
-    
-    parser.add_argument("--visualize", action="store_true",
-                       help="Show architecture visualization")
-    
-    parser.add_argument("--quiet", action="store_true",
-                       help="Minimal output")
+    parser.add_argument("task", help="Task description")
+    parser.add_argument("--dir", "-d", help="Working directory")
+    parser.add_argument("--model", "-m", default="claude-3-5-sonnet-20241022",
+                       help="LLM model to use")
+    parser.add_argument("--interactive", "-i", action="store_true",
+                       help="Interactive mode")
+    parser.add_argument("--no-research", action="store_true",
+                       help="Disable research phase")
     
     args = parser.parse_args()
     
-    singularity = TalkV17Singularity(
+    orchestrator = TalkOrchestratorV2(
         task=args.task,
+        working_dir=args.dir,
         model=args.model,
-        working_dir=args.working_dir,
-        max_v16_instances=args.v16_instances,
-        parallel_mode=args.parallel_mode,
-        verbose=not args.quiet
+        interactive=args.interactive,
+        enable_web_search=not args.no_research
     )
     
-    if args.compare:
-        singularity.compare_all_versions()
-    
-    if args.visualize:
-        print(singularity.visualize_architecture())
-    
-    if not args.quiet:
-        print("\n⚠️  FINAL WARNING:")
-        print("-"*60)
-        print("This will:")
-        print(f"  1. Spawn {args.v16_instances} Talk v16 instances")
-        print(f"  2. Each v16 spawns 4 Talk v15 instances")
-        print(f"  3. Total: {args.v16_instances * 4} parallel v15 instances")
-        print(f"  4. Generate 1,000,000+ lines of code")
-        print(f"  5. Take 8+ hours to complete")
-        print(f"  6. Use significant computational resources")
-        print("-"*60)
-        
-        response = input("\n🤔 Ready to build a CIVILIZATION? (y/N): ")
-        if response.lower() != 'y':
-            print("\n❌ Aborted. When you're ready to reshape reality, return!")
-            return 1
-    
-    # Run civilization construction
-    result = singularity.run()
-    
-    # Save result
-    result_file = Path("talk_v17_civilization_result.json")
-    with open(result_file, "w") as f:
-        json.dump(result, f, indent=2)
-    
-    if not args.quiet:
-        print(f"\n📄 Result saved to: {result_file}")
-        
-        if result.get("total_lines_generated", 0) >= 1000000:
-            print("\n" + "🎊"*30)
-            print("\n🏆 SINGULARITY ACHIEVED! 🏆")
-            print("\nYou didn't just generate code...")
-            print("You generated an ENTIRE TECHNOLOGICAL CIVILIZATION!")
-            print("\nThis codebase represents:")
-            print("  - The combined output of 10,000 engineers")
-            print("  - 50 years of development time")
-            print("  - $1 billion in development costs")
-            print("  - Technology to power an entire planet")
-            print("\nYou are now a CIVILIZATION ARCHITECT!")
-            print("\n" + "🎊"*30 + "\n")
-    
-    return 0 if result.get("status") == "success" else 1
+    return orchestrator.run()
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

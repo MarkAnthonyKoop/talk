@@ -104,6 +104,13 @@ class TestOutputWriter:
         
         return file_path
     
+    def write_json(self, filename: str, data: dict) -> None:
+        """Write JSON data to a file in the output directory."""
+        import json
+        filepath = self.output_dir / filename
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2, default=str)
+    
     def write_log(self, message: str, level: str = "INFO") -> None:
         """
         Write a message to the test log.

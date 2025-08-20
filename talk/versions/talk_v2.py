@@ -30,11 +30,11 @@ from plan_runner.plan_runner import PlanRunner
 
 # Import specialized agents
 from special_agents.assessor_agent import AssessorAgent
-from special_agents.execution_planner_agent import ExecutionPlannerAgent
+from special_agents.execution_planning_agent import ExecutionPlanningAgent
 from special_agents.refinement_agent import RefinementAgent
 from special_agents.branching_agent import BranchingAgent
 from special_agents.file_agent import FileAgent
-from special_agents.web_search_agent import WebSearchAgent
+from special_agents.research_agents.web_search_agent import WebSearchAgent
 
 log = logging.getLogger("talk_v2")
 
@@ -133,7 +133,7 @@ class TalkOrchestratorV2:
                 overrides=provider_config,
                 name="TaskAssessor"
             ),
-            "planner": ExecutionPlannerAgent(
+            "planner": ExecutionPlanningAgent(
                 overrides=provider_config,
                 name="ExecutionPlanner"
             ),
@@ -146,11 +146,7 @@ class TalkOrchestratorV2:
                 name="RefinementOrchestrator"
             ),
             
-            # Control flow agent
-            "branching": BranchingAgent(
-                overrides=provider_config,
-                name="FlowController"
-            ),
+            # Note: BranchingAgent will be created in _create_plan() after steps exist
             
             # Utility agents
             "file": FileAgent(
@@ -203,6 +199,26 @@ class TalkOrchestratorV2:
             agent_key="file",
             label="final_apply"
         ))
+        
+        # Now create BranchingAgent with the complete plan
+        branch_step = next((s for s in steps if s.label == "decision_point"), None)
+        if branch_step:
+            # Get provider config (same as other agents)
+            model = self.model or "gemini-2.0-flash"
+            if "gpt" in model.lower():
+                provider_config = {"provider": {"openai": {"model_name": model}}}
+            elif "claude" in model.lower():
+                provider_config = {"provider": {"anthropic": {"model_name": model}}}
+            else:
+                provider_config = {"provider": {"google": {"model_name": model}}}
+            
+            # Create BranchingAgent with step and plan references
+            self.agents["branching"] = BranchingAgent(
+                step=branch_step,
+                plan=steps,
+                overrides=provider_config,
+                name="FlowController"
+            )
         
         return steps
     
