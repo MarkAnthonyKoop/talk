@@ -61,6 +61,7 @@ class BranchingAgent(Agent):
         self.available_labels = self._extract_labels(plan)
         self.loop_count = 0  # Track loops to prevent infinite recursion
         self.recent_selections = []  # Track recent selections
+        self.selected_step = None  # Store selection for VitalsAgent to read
         
         # Build available steps descriptions from actual agents
         step_descriptions = self._build_step_descriptions(plan, agents)
@@ -150,8 +151,15 @@ class BranchingAgent(Agent):
             # Hard limit on iterations to prevent infinite loops
             if self.loop_count > 20:
                 log.warning("Reached maximum iterations (20), completing workflow")
-                self.step.on_success = None
+                self.selected_step = None
+                # Only modify on_success if VitalsAgent isn't next
+                if self.step.on_success != "check_vitals":
+                    self.step.on_success = None
                 return "Workflow completed due to iteration limit"
+            
+            # Debug logging
+            log.debug(f"BranchingAgent received prompt: {prompt[:200]}...")
+            log.debug(f"Available labels: {self.available_labels}")
             
             # Build the selection prompt
             selection_prompt = self._build_selection_prompt(prompt)
@@ -160,6 +168,8 @@ class BranchingAgent(Agent):
             self._append("user", selection_prompt)
             completion = self.call_ai()
             self._append("assistant", completion)
+            
+            log.debug(f"LLM selected: {completion}")
             
             # Extract the selected label (should be just the label)
             selected_label = completion.strip().lower()
@@ -184,25 +194,45 @@ class BranchingAgent(Agent):
                     selected_label = "complete"
                 log.info(f"Breaking loop by selecting: {selected_label}")
             
-            # Apply the selection to our Step
+            # Apply the selection
             if selected_label == "complete" or selected_label == "none":
-                self.step.on_success = None
-                log.info("Workflow marked as complete")
+                self.selected_step = None
+                # Only modify on_success if VitalsAgent isn't next
+                if self.step.on_success != "check_vitals":
+                    self.step.on_success = None
+                    log.info("Workflow marked as complete (modified on_success)")
+                else:
+                    log.info("Workflow marked as complete (preserved check_vitals)")
             elif selected_label in self.available_labels:
-                self.step.on_success = selected_label
-                log.info(f"Selected next step: {selected_label}")
+                self.selected_step = selected_label
+                # Only modify on_success if VitalsAgent isn't next
+                if self.step.on_success != "check_vitals":
+                    self.step.on_success = selected_label
+                    log.info(f"Selected next step: {selected_label} (modified on_success)")
+                else:
+                    log.info(f"Selected next step: {selected_label} (preserved check_vitals)")
             else:
+                # Debug: log what we have available
+                log.debug(f"Selected '{selected_label}' not in available: {self.available_labels}")
+                
                 # Try to find closest match
                 closest = self._find_closest_match(selected_label)
                 if closest:
-                    self.step.on_success = closest
+                    self.selected_step = closest
+                    # Only modify on_success if VitalsAgent isn't next
+                    if self.step.on_success != "check_vitals":
+                        self.step.on_success = closest
                     log.info(f"Using closest match '{closest}' for '{selected_label}'")
                 else:
                     # Smart fallback based on context
-                    self.step.on_success = self._smart_fallback(prompt)
-                    log.warning(f"No match found, using smart fallback: {self.step.on_success}")
+                    fallback = self._smart_fallback(prompt)
+                    self.selected_step = fallback
+                    # Only modify on_success if VitalsAgent isn't next
+                    if self.step.on_success != "check_vitals":
+                        self.step.on_success = fallback
+                    log.warning(f"No match found, using smart fallback: {fallback}")
             
-            return f"Selected: {self.step.on_success}"
+            return f"Selected: {self.selected_step}"
             
         except Exception as e:
             log.error(f"BranchingAgent error: {e}")
@@ -214,6 +244,12 @@ class BranchingAgent(Agent):
         """Smart fallback based on recommendation content."""
         prompt_lower = prompt.lower()
         
+        # Don't complete if we're asked to write/define/create something
+        if any(word in prompt_lower for word in ["write", "define", "create", "implement", "structure"]):
+            # These are tasks to do, not completion signals
+            if "schema" in prompt_lower or "json" in prompt_lower:
+                return "generate_code" if "generate_code" in self.available_labels else self.available_labels[0]
+        
         # Check for keywords in the recommendation
         if "code" in prompt_lower or "generate" in prompt_lower or "implement" in prompt_lower:
             return "generate_code" if "generate_code" in self.available_labels else self.available_labels[0]
@@ -224,6 +260,10 @@ class BranchingAgent(Agent):
         elif "error" in prompt_lower or "fix" in prompt_lower or "debug" in prompt_lower:
             return "error_recovery" if "error_recovery" in self.available_labels else "generate_code"
         elif "complete" in prompt_lower or "done" in prompt_lower or "finish" in prompt_lower:
+            # Be more careful about completion - only if really done
+            if "mark" in prompt_lower and "task" in prompt_lower:
+                # "mark task as complete" is often about a subtask, not the whole workflow
+                return "generate_code" if "generate_code" in self.available_labels else self.available_labels[0]
             return None  # Complete
         else:
             # Default to generate_code as most common next step
@@ -262,6 +302,8 @@ Your selection:"""
     
     def _find_closest_match(self, target: str) -> Optional[str]:
         """Find the closest matching label."""
+        # Clean up the target (remove leading dashes, bullets, etc.)
+        target = target.strip().lstrip('-').lstrip('•').lstrip('*').strip()
         target_lower = target.lower()
         
         # Exact match (case insensitive)
