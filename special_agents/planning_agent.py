@@ -27,36 +27,54 @@ class PlanningAgent(Agent):
     This agent:
     1. Analyzes the current blackboard state and task progress
     2. Uses the LLM to reason about what should happen next
-    3. Returns structured recommendations that include specific action labels
-    4. Maintains conversation history for context
+    3. Returns plain English recommendations for next actions
+    4. Maintains TALK.md with todos and progress
+    5. Maintains conversation history for context
     """
+    
+    @property
+    def brief_description(self) -> str:
+        """Brief description for BranchingAgent."""
+        return "Analyze progress, maintain todos, recommend next actions"
+    
+    @property
+    def triggers(self) -> List[str]:
+        """Words that suggest planning is needed."""
+        return ["plan", "strategy", "analyze", "todo", "progress", "next"]
     
     def __init__(self, **kwargs):
         """Initialize the planning agent with strategic roles."""
+        # Extract base_dir before passing to parent
+        self.base_dir = Path(kwargs.pop('base_dir', Path.cwd()))
+        
         roles = [
-            "You are a strategic planning agent for a multi-agent orchestration system.",
-            "You analyze the current state of task execution and recommend the next action.",
-            "You maintain a mental model of the task progress and what remains to be done.",
+            "You are a strategic planning agent.",
+            "Your job: Analyze progress, maintain todos, recommend next actions",
+            "",
+            "You maintain TALK.md with:",
+            "- Task description and goals",
+            "- Todo list with [x] completed and [ ] pending items",
+            "- Progress notes and observations",
+            "- Scratchpad for ideas",
             "",
             "MEMORY-AWARE CAPABILITIES:",
             "- You have access to memories from similar past tasks",
             "- Learn from previous successful approaches and avoid past mistakes",
             "- Consider patterns and best practices from historical experiences",
             "",
-            "IMPORTANT: You must recommend specific action labels that map to workflow steps:",
-            "- generate_code: Generate code implementation",
-            "- apply_files: Apply code changes to files", 
-            "- run_tests: Execute tests to validate changes",
-            "- research: Search for information (if available)",
-            "- complete: Mark the task as complete",
-            "- error_recovery: Handle errors and retry",
+            "OUTPUT PLAIN ENGLISH recommendations like:",
+            "- 'We need to generate code for the hello function'",
+            "- 'The code is ready, let's save it to a file'",
+            "- 'Testing shows an error in line 15, we should fix it'",
+            "- 'Everything works correctly, the task is complete'",
             "",
-            "Your output should be structured JSON that includes:",
-            "1. A hierarchical todo list showing task breakdown",
-            "2. Analysis of the current situation",
-            "3. A specific next_action recommendation (must be one of the labels above)",
-            "4. Reasoning for your recommendation",
-            "5. Any relevant insights from past memories (if available)"
+            "DO NOT mention workflow steps or agent names.",
+            "Just describe what needs to happen next in natural language.",
+            "",
+            "Also maintain a simple todo list format:",
+            "[ ] Todo item (pending)",
+            "[x] Completed item",
+            "[~] In progress item"
         ]
         super().__init__(roles=roles, **kwargs)
         
@@ -65,16 +83,17 @@ class PlanningAgent(Agent):
         self.actions_taken = []
         self.scratch_dir = None
         self.memory_context = None  # Store memory context from ReminiscingAgent
+        self.base_dir = kwargs.get('base_dir', Path.cwd())  # For TALK.md
     
     def run(self, input_text: str) -> str:
         """
         Analyze state and provide planning recommendations using the LLM.
         
         Args:
-            input_text: Current blackboard state and context (usually JSON)
+            input_text: Current blackboard state and context
             
         Returns:
-            LLM completion with structured planning output
+            Plain English planning recommendation
         """
         try:
             # Parse input if it's JSON
@@ -84,8 +103,11 @@ class PlanningAgent(Agent):
             if "task_description" in blackboard_state:
                 self.task_description = blackboard_state["task_description"]
             
+            # Load current TALK.md if it exists
+            talk_md_content = self._load_talk_md()
+            
             # Build the prompt for the LLM
-            prompt = self._build_planning_prompt(blackboard_state)
+            prompt = self._build_planning_prompt(blackboard_state, talk_md_content)
             
             # Get LLM's strategic analysis
             self._append("user", prompt)
@@ -96,26 +118,18 @@ class PlanningAgent(Agent):
             if "last_action" in blackboard_state and blackboard_state["last_action"]:
                 self.actions_taken.append(blackboard_state["last_action"])
             
-            # Optionally save to scratch for other agents
-            self._save_to_scratch(completion)
+            # Update TALK.md with the new todos and recommendation
+            self._update_talk_md(completion, blackboard_state)
             
-            return completion
+            # Extract just the recommendation for BranchingAgent
+            recommendation = self._extract_recommendation(completion)
+            
+            return recommendation
             
         except Exception as e:
             log.error(f"Planning error: {e}")
-            # Return a valid planning response even on error
-            error_response = f"""{{
-    "error": "{str(e)}",
-    "todo_hierarchy": "[ ] Recover from error\\n    [ ] Analyze error\\n    [ ] Retry task",
-    "analysis": {{
-        "situation": "An error occurred during planning",
-        "action_needed": "generate_code",
-        "confidence": "low"
-    }},
-    "next_action": "generate_code",
-    "recommendation": "Starting with code generation due to planning error"
-}}"""
-            return error_response
+            # Return plain English error response
+            return f"An error occurred during planning: {e}. Let's try generating code to move forward."
     
     def _parse_input(self, input_text: str) -> Dict[str, Any]:
         """Parse the input to extract blackboard state."""
@@ -135,7 +149,7 @@ class PlanningAgent(Agent):
                 "memory_context": None
             }
     
-    def _build_planning_prompt(self, blackboard_state: Dict[str, Any]) -> str:
+    def _build_planning_prompt(self, blackboard_state: Dict[str, Any], talk_md: str) -> str:
         """Build a comprehensive prompt for strategic planning."""
         task = blackboard_state.get("task_description", "No task specified")
         last_action = blackboard_state.get("last_action", "")
@@ -143,6 +157,10 @@ class PlanningAgent(Agent):
         
         # Build context about what's happened so far
         context_parts = [f"TASK: {task}"]
+        
+        # Add current TALK.md content if exists
+        if talk_md:
+            context_parts.append(f"\nCURRENT TALK.md CONTENT:\n{talk_md}")
         
         # Add memory context if available (from ReminiscingAgent)
         memory_context = blackboard_state.get("memory_context") or self.memory_context
@@ -167,7 +185,7 @@ class PlanningAgent(Agent):
         if "blackboard_state" in blackboard_state:
             state_info = blackboard_state["blackboard_state"]
             if state_info:
-                context_parts.append(f"\nADDITIONAL STATE: {json.dumps(state_info, indent=2)}")
+                context_parts.append(f"\nADDITIONAL STATE: {state_info}")
         
         context = "\n".join(context_parts)
         
@@ -175,44 +193,123 @@ class PlanningAgent(Agent):
 
 Based on the above context, provide strategic planning for the next step.
 
-Create a hierarchical todo list showing the overall task breakdown and current progress.
-Analyze what has been accomplished and what remains to be done.
-Recommend the specific next action to take.
+Provide:
+1. An updated todo list showing what's done and what remains
+2. Your analysis of the current situation
+3. A clear recommendation for what to do next (in plain English)
 
-Your response must be valid JSON in this format:
-{{
-    "todo_hierarchy": "[ ] Main task\\n    [ ] Subtask 1\\n    [✓] Subtask 2 (completed)\\n    [ ] Subtask 3",
-    "current_path": ["Main task", "Current subtask"],
-    "stats": {{
-        "total": 5,
-        "completed": 2,
-        "pending": 3
-    }},
-    "analysis": {{
-        "situation": "Current state assessment",
-        "next_focus": "What to focus on next",
-        "action_needed": "Specific action recommendation",
-        "potential_problems": "Any issues to watch for",
-        "confidence": "high/medium/low"
-    }},
-    "memory_insights": {{
-        "relevant_patterns": "Patterns from past experiences that apply here",
-        "lessons_learned": "What worked or didn't work in similar tasks",
-        "suggested_approach": "Approach based on historical success"
-    }},
-    "next_action": "generate_code|apply_files|run_tests|research|complete|error_recovery",
-    "recommendation": "Explanation of why this action is recommended"
-}}
+Format your response like this:
 
-IMPORTANT: The "next_action" field must be exactly one of: generate_code, apply_files, run_tests, research, complete, error_recovery
+## Todo List
+[ ] Main task
+  [x] Completed subtask
+  [~] In-progress subtask
+  [ ] Pending subtask
 
-Think step by step:
-1. What is the task asking for?
-2. What progress has been made?
-3. What's the logical next step?
-4. Which specific action label best matches that step?"""
+## Analysis
+Describe the current situation and what has been accomplished.
+
+## Recommendation
+Describe what should happen next in plain English. For example:
+- "We need to generate code for the hello function"
+- "The code is ready, let's save it to a file"
+- "There's an error in the test, we should fix it"
+- "Everything is complete"
+
+Do NOT mention agent names or workflow labels. Just describe the action needed."""
         
         return prompt
+    
+    def _load_talk_md(self) -> str:
+        """Load current TALK.md content if it exists."""
+        talk_md_path = self.base_dir / "TALK.md"
+        if talk_md_path.exists():
+            try:
+                with open(talk_md_path, 'r') as f:
+                    return f.read()
+            except Exception as e:
+                log.debug(f"Could not load TALK.md: {e}")
+        return ""
+    
+    def _update_talk_md(self, completion: str, blackboard_state: Dict[str, Any]):
+        """Update TALK.md with current todos and progress."""
+        from datetime import datetime
+        
+        talk_md_path = self.base_dir / "TALK.md"
+        try:
+            # Extract todo list from completion
+            todos = self._extract_todos(completion)
+            
+            content = f"""# TALK.md - Project State
+
+## Task
+{blackboard_state.get('task_description', 'No task specified')}
+
+## Todo List
+{todos}
+
+## Progress Notes
+- Last updated: {datetime.now().isoformat()}
+- Actions taken: {len(self.actions_taken)}
+- Last action: {blackboard_state.get('last_action', 'None')}
+
+## Latest Recommendation
+{self._extract_recommendation(completion)}
+
+## Scratchpad
+{completion}
+"""
+            
+            with open(talk_md_path, 'w') as f:
+                f.write(content)
+                
+        except Exception as e:
+            log.debug(f"Could not update TALK.md: {e}")
+    
+    def _extract_todos(self, completion: str) -> str:
+        """Extract todo list from completion."""
+        # Look for todo list section
+        lines = completion.split('\n')
+        in_todos = False
+        todos = []
+        
+        for line in lines:
+            if '## Todo' in line or '## TODO' in line:
+                in_todos = True
+                continue
+            elif in_todos and line.startswith('##'):
+                break
+            elif in_todos and (line.strip().startswith('[') or line.strip().startswith('-')):
+                todos.append(line)
+        
+        return '\n'.join(todos) if todos else "[ ] No todos extracted"
+    
+    def _extract_recommendation(self, completion: str) -> str:
+        """Extract the recommendation from completion."""
+        # Look for recommendation section
+        lines = completion.split('\n')
+        in_rec = False
+        rec_lines = []
+        
+        for line in lines:
+            if '## Recommendation' in line or '## Next' in line:
+                in_rec = True
+                continue
+            elif in_rec and line.startswith('##'):
+                break
+            elif in_rec and line.strip():
+                rec_lines.append(line.strip())
+        
+        if rec_lines:
+            return ' '.join(rec_lines)
+        
+        # Fallback: look for sentences about what to do
+        for line in lines:
+            line_lower = line.lower()
+            if any(word in line_lower for word in ['need to', 'should', 'let\'s', 'we must', 'next']):
+                return line.strip()
+        
+        return "Continue with the task"
     
     def _save_to_scratch(self, completion: str):
         """Save planning output to scratch directory for other agents."""
@@ -224,18 +321,10 @@ Think step by step:
                 scratch_dir.mkdir(exist_ok=True)
                 self.scratch_dir = scratch_dir
             
-            # Save the latest planning output
-            planning_file = self.scratch_dir / "latest_planning.json"
-            
-            # Try to parse and save as formatted JSON
-            try:
-                planning_data = json.loads(completion)
-                with open(planning_file, "w") as f:
-                    json.dump(planning_data, f, indent=2)
-            except json.JSONDecodeError:
-                # If not valid JSON, save as text
-                with open(planning_file, "w") as f:
-                    f.write(completion)
+            # Save as plain text now
+            planning_file = self.scratch_dir / "latest_planning.txt"
+            with open(planning_file, "w") as f:
+                f.write(completion)
                     
         except Exception as e:
             log.debug(f"Could not save to scratch: {e}")

@@ -43,7 +43,7 @@ from special_agents.code_agent import CodeAgent
 from special_agents.file_agent import FileAgent
 from special_agents.test_agent import TestAgent
 from special_agents.execution_planning_agent import ExecutionPlanningAgent
-from special_agents.web_search_agent import WebSearchAgent
+from special_agents.research_agents.web_search_agent import WebSearchAgent
 
 # Configure logging
 log = logging.getLogger("talk_v3")
@@ -242,6 +242,7 @@ class TalkOrchestratorV3:
         agents = {
             # Strategic planning agent
             "planning": PlanningAgent(
+                base_dir=working_dir_str,
                 overrides=provider_config,
                 name="StrategicPlanner"
             ),
@@ -384,6 +385,7 @@ class TalkOrchestratorV3:
         self.agents["branching"] = BranchingAgent(
             step=branch_step,  # Reference to its own step
             plan=steps,  # Complete plan to choose from
+            agents=self.agents,  # Pass agents dict for descriptions
             overrides={"provider": {"openai": {"model_name": "gpt-4o"}}},
             name="FlowController"
         )

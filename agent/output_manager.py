@@ -20,8 +20,12 @@ class OutputManager:
     
     def __init__(self, settings: Optional[Settings] = None):
         """Initialize with settings instance."""
-        self.settings = settings or Settings.resolve()
-        self.output_root = self.settings.paths.output_root
+        self.settings = settings or Settings()
+        # Try to get output_root, fallback to .talk directory
+        try:
+            self.output_root = self.settings.paths.output_root
+        except AttributeError:
+            self.output_root = Path.cwd() / ".talk"
         
     def create_session_dir(self, session_type: str = "session", custom_name: Optional[str] = None) -> Path:
         """
@@ -134,4 +138,7 @@ def create_test_dir(test_name: str, test_id: Optional[str] = None) -> Path:
 
 def get_output_root() -> Path:
     """Get the root output directory path."""
-    return Settings.resolve().paths.output_root
+    try:
+        return Settings().paths.output_root
+    except AttributeError:
+        return Path.cwd() / ".talk"

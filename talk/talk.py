@@ -242,6 +242,7 @@ class TalkOrchestratorV3:
         agents = {
             # Strategic planning agent
             "planning": PlanningAgent(
+                base_dir=working_dir_str,
                 overrides=provider_config,
                 name="StrategicPlanner"
             ),
@@ -384,6 +385,7 @@ class TalkOrchestratorV3:
         self.agents["branching"] = BranchingAgent(
             step=branch_step,  # Reference to its own step
             plan=steps,  # Complete plan to choose from
+            agents=self.agents,  # Pass agents dict for descriptions
             overrides={"provider": {"openai": {"model_name": "gpt-4o"}}},
             name="FlowController"
         )
@@ -585,9 +587,13 @@ class TalkOrchestratorV3:
 def main():
     """Parse arguments and run Talk v3."""
     # Get default model from settings
-    settings = Settings.resolve()
-    provider_settings = settings.get_provider_settings()
-    default_model = provider_settings.model_name
+    try:
+        settings = Settings()
+        provider_settings = settings.get_provider_settings()
+        default_model = provider_settings.model_name
+    except:
+        # Fallback to default model
+        default_model = "gemini-2.0-flash"
     
     parser = argparse.ArgumentParser(
         description="Talk v3 - Planning-driven multi-agent orchestration"

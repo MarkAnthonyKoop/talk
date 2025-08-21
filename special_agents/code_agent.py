@@ -30,6 +30,16 @@ class CodeAgent(Agent):
     4. Can save code snippets to scratch for other agents
     """
     
+    @property
+    def brief_description(self) -> str:
+        """Brief description for workflow."""
+        return "Generate code implementations for requested functionality"
+    
+    @property
+    def triggers(self) -> List[str]:
+        """Words that suggest code generation is needed."""
+        return ["generate", "implement", "code", "create", "build", "write"]
+    
     def __init__(self, **kwargs):
         """Initialize the CodeAgent with code-focused roles."""
         roles = [

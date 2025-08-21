@@ -115,6 +115,16 @@ class Agent:
             log.exception("Could not switch provider: %s", exc)
             return False
 
+    @property
+    def brief_description(self) -> str:
+        """Brief description of what this agent does. Override in subclasses."""
+        return f"{self.name} agent"
+    
+    @property
+    def triggers(self) -> List[str]:
+        """Words/phrases that suggest this agent should run. Override in subclasses."""
+        return []
+
     # ======================================================================
     # Internals
     # ======================================================================

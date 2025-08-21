@@ -32,6 +32,16 @@ class FileAgent(Agent):
     - Validation of search blocks
     """
     
+    @property
+    def brief_description(self) -> str:
+        """Brief description for workflow."""
+        return "Save code to files, apply changes, manage file operations"
+    
+    @property
+    def triggers(self) -> List[str]:
+        """Words that suggest file operations are needed."""
+        return ["save", "write", "file", "apply", "persist", "store"]
+    
     def __init__(self, base_dir: Optional[str] = None, **kwargs):
         """Initialize the FileAgent."""
         super().__init__(roles=[], **kwargs)
@@ -66,6 +76,11 @@ class FileAgent(Agent):
         
         # First check if this is CodeAgent output with markdown blocks
         code_files = self._extract_code_files(input_text)
+        if code_files:
+            return self._write_code_files(code_files)
+        
+        # Check scratch directory for code files from CodeAgent
+        code_files = self._load_from_scratch()
         if code_files:
             return self._write_code_files(code_files)
         
@@ -185,6 +200,28 @@ class FileAgent(Agent):
             
         except Exception as e:
             return f"ERROR - {str(e)}"
+    
+    def _load_from_scratch(self) -> List[Tuple[str, str]]:
+        """Load code files from scratch directory created by CodeAgent."""
+        files = []
+        scratch_dir = self.base_dir / ".talk_scratch"
+        
+        if not scratch_dir.exists():
+            return files
+        
+        # Look for latest code files
+        code_files = list(scratch_dir.glob("*.*"))
+        for file_path in code_files:
+            if file_path.suffix in ['.py', '.js', '.ts', '.java', '.go', '.rb', '.rs']:
+                try:
+                    with open(file_path, 'r') as f:
+                        content = f.read()
+                    files.append((file_path.name, content))
+                    log.info(f"Loaded code file from scratch: {file_path.name}")
+                except Exception as e:
+                    log.error(f"Failed to load {file_path}: {e}")
+        
+        return files
     
     def _extract_code_files(self, text: str) -> List[Tuple[str, str]]:
         """Extract code files from markdown blocks with filenames."""
