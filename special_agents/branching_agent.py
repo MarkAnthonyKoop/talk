@@ -147,6 +147,12 @@ class BranchingAgent(Agent):
         try:
             self.loop_count += 1
             
+            # Hard limit on iterations to prevent infinite loops
+            if self.loop_count > 20:
+                log.warning("Reached maximum iterations (20), completing workflow")
+                self.step.on_success = None
+                return "Workflow completed due to iteration limit"
+            
             # Build the selection prompt
             selection_prompt = self._build_selection_prompt(prompt)
             
@@ -171,6 +177,12 @@ class BranchingAgent(Agent):
                     selected_label = "generate_code" if "generate_code" in self.available_labels else "complete"
                 elif selected_label == "generate_code":
                     selected_label = "apply_files" if "apply_files" in self.available_labels else "complete"
+                elif selected_label == "apply_files":
+                    selected_label = "run_tests" if "run_tests" in self.available_labels else "complete"
+                else:
+                    # If we're still looping, just complete
+                    selected_label = "complete"
+                log.info(f"Breaking loop by selecting: {selected_label}")
             
             # Apply the selection to our Step
             if selected_label == "complete" or selected_label == "none":

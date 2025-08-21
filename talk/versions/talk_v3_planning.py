@@ -327,7 +327,7 @@ class TalkOrchestratorV3:
             Step(
                 label="generate_code",
                 agent_key="code",
-                on_success="plan_next",
+                on_success="apply_files",  # Go directly to apply_files after generating code
                 on_fail="plan_next"
             ),
             

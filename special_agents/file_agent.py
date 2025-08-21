@@ -57,7 +57,12 @@ class FileAgent(Agent):
     
     def reply(self, input_text: str, **kwargs) -> str:
         """Process SEARCH/REPLACE blocks or file creation requests."""
-        self._append("user", f"File edit request:\n{input_text}")
+        # Check if this is coming from CodeAgent (has code blocks)
+        if "```" in input_text and "filename:" in input_text:
+            log.info("Detected CodeAgent output with code blocks")
+            self._append("user", f"Applying code from CodeAgent")
+        else:
+            self._append("user", f"File edit request:\n{input_text[:200]}...")
         
         try:
             results = self._process_edit_blocks(input_text)

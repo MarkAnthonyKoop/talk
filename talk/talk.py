@@ -327,7 +327,7 @@ class TalkOrchestratorV3:
             Step(
                 label="generate_code",
                 agent_key="code",
-                on_success="plan_next",
+                on_success="apply_files",  # Go directly to apply_files after generating code
                 on_fail="plan_next"
             ),
             
@@ -587,13 +587,9 @@ class TalkOrchestratorV3:
 def main():
     """Parse arguments and run Talk v3."""
     # Get default model from settings
-    try:
-        settings = Settings()
-        provider_settings = settings.get_provider_settings()
-        default_model = provider_settings.model_name
-    except:
-        # Fallback to default model
-        default_model = "gemini-2.0-flash"
+    settings = Settings.resolve()
+    provider_settings = settings.get_provider_settings()
+    default_model = provider_settings.model_name
     
     parser = argparse.ArgumentParser(
         description="Talk v3 - Planning-driven multi-agent orchestration"
