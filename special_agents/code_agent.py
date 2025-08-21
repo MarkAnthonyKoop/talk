@@ -120,10 +120,32 @@ The error has been logged. Please provide more context if you need specific func
         # Check if we have context from previous planning
         context_parts = []
         
+        # CRITICAL: Get the original task from blackboard
+        original_task = self._get_original_task()
+        if original_task:
+            context_parts.append(f"ORIGINAL USER REQUEST: {original_task}")
+            context_parts.append("")
+        
+        # Get planning recommendations from blackboard
+        planning_recommendation = self._get_planning_recommendation()
+        if planning_recommendation:
+            context_parts.append("PLANNING RECOMMENDATION:")
+            context_parts.append(planning_recommendation)
+            context_parts.append("")
+        
         # Try to load planning context from scratch
         planning_context = self._load_planning_context()
         if planning_context:
+            # Override original_task if we have it in context
+            if "task_description" in planning_context and not original_task:
+                original_task = planning_context["task_description"]
+                if original_task and original_task not in context_parts[0] if context_parts else True:
+                    context_parts.insert(0, f"ORIGINAL USER REQUEST: {original_task}")
+                    context_parts.insert(1, "")
+            
             context_parts.append("PLANNING CONTEXT:")
+            if "latest_recommendation" in planning_context:
+                context_parts.append(f"Latest recommendation: {planning_context['latest_recommendation'][:500]}")
             if "todo_hierarchy" in planning_context:
                 context_parts.append(f"Task breakdown:\n{planning_context['todo_hierarchy']}")
             if "analysis" in planning_context:
@@ -140,8 +162,9 @@ The error has been logged. Please provide more context if you need specific func
                 context_parts.append(f"... and {len(existing_files) - 10} more files")
             context_parts.append("")
         
-        # Add the main task
-        context_parts.append(f"TASK: {input_text}")
+        # Add the immediate instruction (often just "generate_code")
+        if input_text and input_text != "generate_code":
+            context_parts.append(f"IMMEDIATE INSTRUCTION: {input_text}")
         
         # Add generation instructions
         context_parts.append("""
@@ -186,8 +209,18 @@ This code should be saved as `example.py` and can be run with `python example.py
         """Load planning context from scratch if available."""
         try:
             scratch_dir = Path.cwd() / ".talk_scratch"
-            planning_file = scratch_dir / "latest_planning.json"
             
+            # First try the new structured context file
+            context_file = scratch_dir / "planning_context.json"
+            if context_file.exists():
+                with open(context_file) as f:
+                    data = json.load(f)
+                    # Ensure we have task_description
+                    if "task_description" in data:
+                        return data
+            
+            # Fallback to old format
+            planning_file = scratch_dir / "latest_planning.json"
             if planning_file.exists():
                 with open(planning_file) as f:
                     return json.load(f)
@@ -328,3 +361,37 @@ This code should be saved as `example.py` and can be run with `python example.py
                     break
         
         return ' '.join(summary_lines) if summary_lines else "Code implementation generated"
+    
+    def _get_original_task(self) -> Optional[str]:
+        """Get the original task from blackboard."""
+        try:
+            # Check if we have access to blackboard
+            if hasattr(self, 'blackboard') and self.blackboard:
+                # Look for task_description entry
+                entries = self.blackboard.query_sync(label="task_description")
+                if entries:
+                    return entries[0].content
+                
+                # Fallback: look for initial user input
+                user_entries = self.blackboard.query_sync(role="user")
+                if user_entries:
+                    return user_entries[0].content
+        except Exception as e:
+            log.debug(f"Could not get original task from blackboard: {e}")
+        
+        return None
+    
+    def _get_planning_recommendation(self) -> Optional[str]:
+        """Get the latest planning recommendation from blackboard."""
+        try:
+            if hasattr(self, 'blackboard') and self.blackboard:
+                # Look for plan_next entries
+                entries = self.blackboard.query_sync(label="plan_next")
+                if entries:
+                    # Get the most recent planning recommendation
+                    latest = entries[-1]
+                    return latest.content
+        except Exception as e:
+            log.debug(f"Could not get planning recommendation: {e}")
+        
+        return None

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -321,10 +322,21 @@ Do NOT mention agent names or workflow labels. Just describe the action needed."
                 scratch_dir.mkdir(exist_ok=True)
                 self.scratch_dir = scratch_dir
             
-            # Save as plain text now
+            # Save as plain text
             planning_file = self.scratch_dir / "latest_planning.txt"
             with open(planning_file, "w") as f:
                 f.write(completion)
+            
+            # Also save structured context for CodeAgent
+            context_file = self.scratch_dir / "planning_context.json"
+            context_data = {
+                "task_description": self.task_description,
+                "latest_recommendation": completion,
+                "actions_taken": self.actions_taken,
+                "timestamp": time.time()
+            }
+            with open(context_file, "w") as f:
+                json.dump(context_data, f, indent=2)
                     
         except Exception as e:
             log.debug(f"Could not save to scratch: {e}")
