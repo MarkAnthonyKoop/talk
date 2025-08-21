@@ -54,6 +54,8 @@ class CodeAgent(Agent):
             "",
             "You may output JSON for structured data, but the code itself should be in code blocks."
         ]
+        # Extract base_dir before passing to parent
+        self.base_dir = kwargs.pop('base_dir', None)
         super().__init__(roles=roles, **kwargs)
         
         self.scratch_dir = None
@@ -208,7 +210,9 @@ This code should be saved as `example.py` and can be run with `python example.py
         try:
             # Create scratch directory if needed
             if not self.scratch_dir:
-                scratch_dir = Path.cwd() / ".talk_scratch"
+                # Use the base_dir if available, otherwise cwd
+                base = Path(self.base_dir) if self.base_dir else Path.cwd()
+                scratch_dir = base / ".talk_scratch"
                 scratch_dir.mkdir(exist_ok=True)
                 self.scratch_dir = scratch_dir
             

@@ -133,13 +133,36 @@ When committing:
 - NEVER add or commit large data files
 - Check .gitignore is working properly
 
-### NEVER DELETE FILES WITHOUT EXPLICIT PERMISSION
+### NEVER DELETE OR REMOVE ANYTHING WITHOUT EXPLICIT PERMISSION
 
-**ABSOLUTE RULE:** You MUST NOT delete any files without asking the user first, even if:
+**ABSOLUTE RULE:** You MUST NOT delete, remove, or modify by removal ANYTHING without explicit user permission. This includes:
+- Files (NEVER delete files)
+- Code (NEVER remove functions, methods, or code blocks)
+- Comments (NEVER remove comments)
+- Imports (NEVER remove import statements)
+- Any existing content
+
+**CRITICAL COMMANDS:**
+- **NEVER use `rm -rf` without explicit permission** - This command is extremely dangerous
+- **NEVER use `rm` without explicit permission** - Always ask first
+- **ALWAYS explain the reason** for any proposed deletion of files or directories
+- **ALWAYS list what will be deleted** before asking for permission
+- **ALWAYS use `cp -n` or `cp -i`** instead of `cp` to prevent overwriting
+- **ALWAYS use `mv -n` or `mv -i`** instead of `mv` to prevent overwriting
+- **List all file operations for approval** before executing batch operations
+
+**FILE MODIFICATIONS:**
+- Small modifications are usually fine (bug fixes, small features)
+- **Large code reworks require verification** unless specifically requested
+- If removing/replacing >50 lines or restructuring significantly, ask first
+- When in doubt, show a diff or summary and ask for confirmation
+
+**EVEN IF:**
 - The file appears to be temporary or disposable
 - You plan to create a backup first
 - The file contains sensitive information
 - The deletion seems necessary for a task
+- The directory is named "test" or "tmp" or "playground"
 
 **WHY THIS MATTERS:** 
 - Users may use generic filenames like "file" for important work
@@ -292,9 +315,51 @@ special agents frequently send files to each other.   the temporary place for th
 ~/.talk_scratch/<category>/<name>/<year_month>/<any_other_desired_subdirs>/<filename>
 
 
+## CRITICAL: AVOID SYMPTOM PATCHING
+
+**ABSOLUTE RULE:** When fixing bugs or performance issues, ALWAYS identify and fix the root cause, not the symptom.
+
+### Common Anti-Pattern (DO NOT DO THIS):
+1. See: "Simple tasks are slow"
+2. Add: Special case logic like `if is_simple_task(): use_different_path()`
+3. Result: Technical debt, fragile code, doesn't fix underlying issue
+
+### Correct Approach (DO THIS):
+1. See: "Simple tasks are slow"
+2. Ask: "Why are ALL tasks slow? What's the architectural issue?"
+3. Find: "The refinement loop has no proper exit condition"
+4. Fix: "Fix the refinement agent's exit logic for ALL cases"
+
+### Examples of Symptom Patching to Avoid:
+- Adding special "simple task" detection instead of fixing workflow efficiency
+- Creating task-specific workarounds instead of fixing agent communication
+- Hardcoding exceptions instead of fixing configuration systems
+- Adding "if model == 'specific-model'" instead of fixing model abstraction
+
+**Remember:** Every special case you add makes the system harder to understand, test, and maintain. Fix the root cause, not the symptom.
+
 ## ENFORCEMENT
 
 This file is automatically loaded by Claude Code. Following these rules is MANDATORY, not optional. The repository maintainer will reject any changes that violate this structure.
+
+## Talk Version Development Workflow
+
+### Working with Talk Versions
+1. **Development**: Work on specific versions in `talk/versions/` (e.g., `talk_v2.py`)
+2. **Testing**: Copy the version you're testing to `talk/talk.py`:
+   ```bash
+   cp talk/versions/talk_v2.py talk/talk.py
+   ```
+3. **Running**: Use the `talk` command from any directory:
+   ```bash
+   talk "Your task description" --dir /path/to/working/dir
+   ```
+
+### Model Configuration
+- **Default provider**: Set in `agent/settings.py` (currently `google`)
+- **Default model**: `gemini-2.0-flash` for Google provider
+- **Override via CLI**: `talk "task" --model claude-3-5-sonnet-20241022`
+- **Override via env**: `export TALK_FORCE_MODEL=gpt-4o`
 
 ## Questions?
 

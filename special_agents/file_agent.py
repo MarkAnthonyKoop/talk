@@ -41,6 +41,10 @@ class FileAgent(Agent):
         # Track files for validation
         self._file_cache = {}
     
+    def run(self, input_text: str) -> str:
+        """Run method that processes code files."""
+        return self.reply(input_text)
+    
     def reply(self, input_text: str, **kwargs) -> str:
         """Process SEARCH/REPLACE blocks or file creation requests."""
         self._append("user", f"File edit request:\n{input_text}")
@@ -60,7 +64,12 @@ class FileAgent(Agent):
         """Process all edit blocks in the input."""
         results = []
         
-        # Find all file paths and their associated blocks
+        # First check if this is CodeAgent output with markdown blocks
+        code_files = self._extract_code_files(input_text)
+        if code_files:
+            return self._write_code_files(code_files)
+        
+        # Otherwise try to parse SEARCH/REPLACE blocks
         file_blocks = self._parse_file_blocks(input_text)
         
         for file_path, blocks in file_blocks.items():
@@ -176,6 +185,55 @@ class FileAgent(Agent):
             
         except Exception as e:
             return f"ERROR - {str(e)}"
+    
+    def _extract_code_files(self, text: str) -> List[Tuple[str, str]]:
+        """Extract code files from markdown blocks with filenames."""
+        files = []
+        lines = text.split('\n')
+        i = 0
+        
+        log.debug(f"Extracting code files from text with {len(lines)} lines")
+        
+        while i < len(lines):
+            line = lines[i]
+            # Look for code block with filename comment
+            if line.startswith('```'):
+                lang = line[3:].strip()
+                # Look for filename in next line
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    filename_match = re.match(r'^#\s*filename:\s*(.+)$', next_line)
+                    if filename_match:
+                        filename = filename_match.group(1).strip()
+                        # Collect code until closing ```
+                        code_lines = []
+                        j = i + 2  # Skip filename line
+                        while j < len(lines) and not lines[j].strip() == '```':
+                            code_lines.append(lines[j])
+                            j += 1
+                        if code_lines:
+                            files.append((filename, '\n'.join(code_lines)))
+                            log.info(f"Found code file: {filename} with {len(code_lines)} lines")
+                        i = j
+            i += 1
+        
+        log.info(f"Extracted {len(files)} code files")
+        return files
+    
+    def _write_code_files(self, files: List[Tuple[str, str]]) -> List[str]:
+        """Write code files to workspace."""
+        results = []
+        for filename, content in files:
+            try:
+                full_path = self.base_dir / filename
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(full_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                log.info(f"Created file: {full_path}")
+                results.append(f"{filename}: SUCCESS - File created")
+            except Exception as e:
+                results.append(f"{filename}: ERROR - {str(e)}")
+        return results
     
     def _apply_edits(self, file_path: str, blocks: List[Dict]) -> str:
         """Apply multiple SEARCH/REPLACE blocks to an existing file."""

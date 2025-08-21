@@ -38,7 +38,7 @@ from pydantic import Field, model_validator
 class LLMSettings(BaseSettings):
     """Settings related to the LLM provider."""
     model_config = SettingsConfigDict(env_prefix="TALK_LLM_", extra="ignore")
-    provider: str = "anthropic"
+    provider: str = "google"
 
 class GoogleSettings(BaseSettings):
     """Settings specific to the Google LLM provider."""
