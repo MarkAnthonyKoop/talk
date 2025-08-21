@@ -52,7 +52,11 @@ class PlanRunner:
     def _run_single(self, step: Step, prompt: str) -> str:
         log.debug("→ %s", step.label)
         agent = self.agents[step.agent_key]
-        result = agent.run(prompt)
+        
+        # Enhance prompt with blackboard context for certain agents
+        enhanced_prompt = self._enhance_prompt_with_context(step, prompt)
+        
+        result = agent.run(enhanced_prompt)
         self.bb.add(step.label, result)
         return result
 
@@ -84,3 +88,64 @@ class PlanRunner:
         # fall back to linear ordering
         idx = self.order.index(step)
         return self.order[idx + 1] if idx + 1 < len(self.order) else None
+    
+    # ------------------------------------------------------------------
+    def _enhance_prompt_with_context(self, step: Step, prompt: str) -> str:
+        """
+        Enhance the prompt with blackboard context for agents that need it.
+        
+        This ensures agents like CodeAgent get the full task context,
+        not just "generate_code" from the previous agent.
+        """
+        # List of agents that need full context
+        context_needing_labels = ["generate_code", "apply_files", "run_tests"]
+        
+        if step.label not in context_needing_labels:
+            return prompt
+        
+        # Build context from blackboard
+        import json
+        context = {
+            "immediate_instruction": prompt,
+            "original_task": None,
+            "planning_context": None,
+            "recent_actions": []
+        }
+        
+        # Get original task
+        task_entries = self.bb.query_sync(label="task_description")
+        if task_entries:
+            context["original_task"] = task_entries[0].content
+        
+        # Get latest planning recommendation
+        planning_entries = self.bb.query_sync(label="plan_next")
+        if planning_entries:
+            # Get the most recent planning entry
+            latest_plan = planning_entries[-1]
+            context["planning_context"] = latest_plan.content
+        
+        # Get recent actions for context
+        all_entries = self.bb.entries()
+        for entry in all_entries[-5:]:  # Last 5 entries
+            if entry.label != "task_description":
+                context["recent_actions"].append({
+                    "step": entry.label,
+                    "summary": entry.content[:200] if len(entry.content) > 200 else entry.content
+                })
+        
+        # For CodeAgent specifically, provide rich context
+        if step.label == "generate_code":
+            enhanced = f"""CONTEXT:
+Original Task: {context['original_task'] or 'Not specified'}
+
+Planning Recommendation: {context['planning_context'] or 'Not available'}
+
+Recent Actions: {json.dumps(context['recent_actions'], indent=2) if context['recent_actions'] else 'None'}
+
+Instruction: {prompt}
+
+IMPORTANT: Generate code that directly addresses the original task above, not generic templates."""
+            return enhanced
+        
+        # For other agents, provide simpler context
+        return json.dumps(context, indent=2)
