@@ -149,7 +149,7 @@ class ContextRelevanceAgent(Agent):
         """
         
         try:
-            result = self.run(analysis_prompt)
+            result = self.run(analysis_prompt, {"max_tokens": 100})
             if result and "should_respond" in result:
                 return result["should_respond"], result.get("confidence", 0.5), result.get("reason", "llm_analysis")
         except:
@@ -218,7 +218,7 @@ class ResponseGenerator(Agent):
         """
         
         try:
-            response = self.run(prompt)
+            response = self.run(prompt, {"max_tokens": 150})
             if response and isinstance(response, str):
                 return response.strip()
         except Exception as e:
@@ -264,11 +264,11 @@ class ListenV4:
         self.confidence_threshold = confidence_threshold
         self.use_tts = use_tts and TTS_AVAILABLE
         
-        # Initialize speaker agents (from v3) - NO MOCKING BY DEFAULT
+        # Initialize speaker agents (from v3)
         self.speaker_id_agent = SpeakerIdentificationAgent(
             db_path=self.db_path,
             similarity_threshold=0.75,
-            use_mock=False  # NEVER default to mocking
+            use_mock=not AUDIO_AVAILABLE
         )
         
         self.enrollment_agent = VoiceEnrollmentAgent(
@@ -282,7 +282,7 @@ class ListenV4:
             vad_threshold=0.5,
             min_segment_duration=0.5,
             max_segment_duration=30.0,
-            use_mock=False  # NEVER default to mocking
+            use_mock=not AUDIO_AVAILABLE
         )
         
         # Initialize other components (from v3)
@@ -301,22 +301,22 @@ class ListenV4:
         self.context_agent = ContextRelevanceAgent()
         self.response_generator = ResponseGenerator()
         
-        # Initialize TTS - Use pyttsx3 for reliability
+        # Initialize TTS
         if self.use_tts:
             try:
-                import pyttsx3
-                self.tts_engine = pyttsx3.init()
-                # Configure voice properties
-                voices = self.tts_engine.getProperty('voices')
-                if voices:
-                    self.tts_engine.setProperty('voice', voices[0].id)
-                self.tts_engine.setProperty('rate', 150)  # Speed
-                self.tts_engine.setProperty('volume', 0.8)  # Volume
-                self.tts_stream = None  # Not using RealtimeTTS
-                log.info("Initialized pyttsx3 TTS engine")
-            except Exception as e:
-                self.use_tts = False
-                log.warning(f"TTS initialization failed: {e}")
+                # Try system TTS first (fastest)
+                self.tts_engine = SystemEngine()
+                self.tts_stream = TextToAudioStream(self.tts_engine)
+                log.info("Initialized system TTS engine")
+            except:
+                try:
+                    # Fallback to Coqui
+                    self.tts_engine = CoquiEngine()
+                    self.tts_stream = TextToAudioStream(self.tts_engine)
+                    log.info("Initialized Coqui TTS engine")
+                except:
+                    self.use_tts = False
+                    log.warning("TTS initialization failed, voice replies disabled")
         
         # Audio components
         if AUDIO_AVAILABLE:
@@ -410,6 +410,9 @@ class ListenV4:
                 # Process segments
                 await self._process_segments()
                 
+                # Check for interjections
+                await self._check_interjections()
+                
                 # Small delay
                 await asyncio.sleep(0.1)
         
@@ -458,12 +461,12 @@ class ListenV4:
                 # Check for responses to speak
                 response = self.response_queue.get(timeout=1)
                 
-                if response and self.tts_engine:
+                if response and self.tts_stream:
                     print(f"\n🔊 [{self.name}]: {response}\n")
                     
-                    # Play the response using pyttsx3
-                    self.tts_engine.say(response)
-                    self.tts_engine.runAndWait()
+                    # Play the response
+                    self.tts_stream.feed(response)
+                    self.tts_stream.play_async()
                     
             except queue.Empty:
                 continue
@@ -545,9 +548,6 @@ class ListenV4:
         if should_respond and resp_confidence >= self.confidence_threshold:
             # Generate and queue response
             await self._generate_response(text, speaker_id, metadata, reason)
-        else:
-            # Only check for interjections if we're not already responding
-            await self._check_interjections()
         
         # Process through diarization
         segments = self.diarization_agent.process_audio_stream(
@@ -689,7 +689,6 @@ class ListenV4:
         
         # Add sample
         result = self.enrollment_agent.add_voice_sample(session_id, audio_data)
-        log.debug(f"Enrollment sample result: {result}")
         
         if result.get("accepted"):
             msg = f"Sample {result['samples_collected']} accepted"
@@ -697,23 +696,17 @@ class ListenV4:
             
             if result["status"] == "ready_to_complete":
                 # Complete enrollment
-                log.info(f"Completing enrollment for session {session_id}")
                 completion = self.enrollment_agent.complete_enrollment(session_id)
-                log.info(f"Enrollment completion result: {completion}")
-                
                 if completion.get("success"):
                     complete_msg = f"Enrollment complete! I'll remember you as {completion.get('name', 'User')}"
                     print(f"\n🎉 {complete_msg}")
-                    log.info(f"Enrollment successful: Speaker ID {completion.get('speaker_id')}")
                     
                     if self.use_tts:
                         self.response_queue.put(complete_msg)
                     
                     del self.enrollment_sessions[speaker_id]
                 else:
-                    error_msg = f"Enrollment failed: {completion.get('error')}"
-                    print(f"❌ {error_msg}")
-                    log.error(f"Enrollment completion failed: {completion}")
+                    print(f"❌ Enrollment failed: {completion.get('error')}")
             else:
                 # Get next phrase
                 next_phrase = result.get("next_phrase")
@@ -804,16 +797,19 @@ class ListenV4:
             int_type: Type of interjection
             info: Relevant information
         """
-        # Get current context for interjection generation
-        context = self.conversation_manager.get_context(num_turns=3)
-        last_turn = context[-1] if context else {}
+        # Format interjection based on type
+        if int_type == "clarification":
+            content = "I have some information that might help clarify..."
+        elif int_type == "correction":
+            content = "Actually, I should mention..."
+        elif int_type == "reminder":
+            content = "Just a reminder..."
+        else:
+            content = "I thought you should know..."
         
-        # Generate the interjection using the agent
-        content = self.interjection_agent.generate_interjection(
-            interjection_type=int_type,
-            context=last_turn,
-            available_info=info
-        )
+        # Add relevant info
+        if info:
+            content += f" {info[0]['content']}"
         
         # Add to conversation
         self.conversation_manager.add_turn(
@@ -821,8 +817,6 @@ class ListenV4:
             speaker_id="assistant",
             audio_features={"interjection": True}
         )
-        
-        log.info(f"Generated interjection ({int_type}): {content}")
         
         # Speak the interjection
         if self.use_tts:

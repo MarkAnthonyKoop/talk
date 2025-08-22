@@ -230,7 +230,9 @@ class ConversationManager:
         self.turns.append(turn)
         self.context_window.append(turn)
         
-        # Update speaker
+        # Update speaker (auto-create if unknown)
+        if speaker_id not in self.speakers:
+            self.add_speaker(speaker_id, f"Unknown Speaker {len(self.speakers) + 1}")
         speaker = self.speakers[speaker_id]
         speaker.add_utterance(text, turn.timestamp, confidence)
         self.current_speaker = speaker_id

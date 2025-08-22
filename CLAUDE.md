@@ -361,6 +361,15 @@ This file is automatically loaded by Claude Code. Following these rules is MANDA
 - **Override via CLI**: `talk "task" --model claude-3-5-sonnet-20241022`
 - **Override via env**: `export TALK_FORCE_MODEL=gpt-4o`
 
+## CRITICAL: Python Path and Imports
+
+**MUST READ**: See the "Python Path and Imports" section in `docs/README.md` for critical import conventions.
+
+Key rules:
+1. **NEVER** use `sys.path.insert()` or modify PYTHONPATH
+2. **ALL** imports are relative to the Talk root directory (~/talk)
+3. If PYTHONPATH is not set, ask user to set it and --resume
+
 ## Questions?
 
 See `docs/README.md` for project documentation.

@@ -50,6 +50,56 @@ Everything each agent does is appended to the **Blackboard** (`BlackboardEntry`)
 
 ---
 
+## 🐍 Python Path and Imports
+
+### PYTHONPATH Configuration
+
+**IMPORTANT**: The `PYTHONPATH` environment variable MUST be set to the Talk installation directory (usually `~/talk`, but may differ based on installation location).
+
+```bash
+# Typical setup
+export PYTHONPATH=~/talk
+
+# Or wherever Talk is installed
+export PYTHONPATH=/path/to/talk
+```
+
+### Import Convention
+
+**ALL imports in the Talk codebase are relative to the PYTHONPATH root**. This means:
+
+```python
+# CORRECT - imports relative to ~/talk
+from agent.agent import Agent
+from special_agents.code_agent import CodeAgent
+from tests.utilities.test_output_writer import TestOutputWriter
+
+# WRONG - do not use relative imports or sys.path manipulation
+import sys
+sys.path.insert(0, '../../../')  # Never do this!
+from ..agent import Agent  # Don't use relative imports
+```
+
+### For Claude Code and AI Assistants
+
+**CRITICAL**: 
+- **DO NOT** set or modify `PYTHONPATH` in code
+- **DO NOT** use `sys.path.insert()` or other path manipulations
+- If `PYTHONPATH` is not set correctly, ask the user to:
+  1. Set `PYTHONPATH` to the Talk installation directory
+  2. Resume the conversation with `--resume`
+
+Example check:
+```python
+import os
+if 'PYTHONPATH' not in os.environ or not os.environ['PYTHONPATH'].endswith('talk'):
+    print("Please set PYTHONPATH to your Talk installation directory and --resume")
+    sys.exit(1)
+```
+
+## ⚙️ Mocking
+In general, do not create any new mocking or monkey patching code.   Strive to build production ready code, and only fall back as a last resort and after requesting specific permission to do so.
+
 ## ⚙️ Configuration
 
 Talk uses a thin Pydantic-powered settings layer (`agent/settings.py`).  

@@ -1,0 +1,111 @@
+# Listen v4 TTS and Context Detection Requirements
+# Based on research conducted for optimal real-time voice synthesis
+
+# === CORE TTS LIBRARIES ===
+
+# Primary: RealtimeTTS - Best for real-time performance
+realtimetts[all]>=0.3.0
+# Includes: OpenAI TTS, ElevenLabs, Azure, Coqui TTS, StyleTTS2, Piper, etc.
+
+# Secondary: Coqui TTS for voice cloning and high-quality synthesis  
+TTS>=0.22.0
+
+# Lightweight alternative: MeloTTS (install via git for latest)
+# git+https://github.com/myshell-ai/MeloTTS.git
+
+# === WAKE WORD DETECTION ===
+
+# Primary: openWakeWord - Open source, customizable
+openwakeword>=0.6.0
+
+# Alternative: Porcupine (commercial license required for production)
+# pvporcupine>=3.0.0
+
+# === SPEECH RECOGNITION & PROCESSING ===
+
+# Core speech recognition
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.11
+
+# Voice Activity Detection
+# silero-vad>=4.0.0  # Install via: pip install silero-vad
+
+# Audio processing
+librosa>=0.10.0
+soundfile>=0.12.0
+numpy>=1.24.0
+
+# === INTENT DETECTION & NLP ===
+
+# Transformers for advanced intent detection
+transformers>=4.35.0
+torch>=2.0.0
+tokenizers>=0.15.0
+
+# Alternative: spaCy for lightweight NLP
+spacy>=3.7.0
+# Run: python -m spacy download en_core_web_sm
+
+# === CLOUD TTS APIs ===
+
+# Deepgram for fastest cloud TTS
+deepgram-sdk>=3.0.0
+
+# Azure Cognitive Services
+azure-cognitiveservices-speech>=1.34.0
+
+# Google Cloud TTS
+google-cloud-texttospeech>=2.16.0
+
+# OpenAI for high-quality synthesis
+openai>=1.0.0
+
+# Amazon Polly
+boto3>=1.34.0
+
+# === AUDIO PLAYBACK ===
+
+# Cross-platform audio playback
+pygame>=2.5.0
+# Alternative: pydub + simpleaudio
+# pydub>=0.25.0
+# simpleaudio>=1.0.4
+
+# === UTILITIES ===
+
+# Async support
+asyncio
+aiohttp>=3.9.0
+
+# Data handling
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+
+# Logging and monitoring
+structlog>=23.2.0
+
+# === DEVELOPMENT & TESTING ===
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Mock data generation
+faker>=21.0.0
+
+# === OPTIONAL: MCP INTEGRATION ===
+
+# For Model Context Protocol TTS servers
+# mcp>=1.0.0  # Install specific MCP TTS servers as needed
+
+# === PLATFORM-SPECIFIC ===
+
+# macOS: For system TTS integration
+# osascript  # Built-in on macOS
+
+# Linux: For system TTS
+# espeak>=1.48.0  # Install via system package manager
+# festival>=2.5.0  # Install via system package manager
+
+# Windows: For SAPI integration  
+# win32com  # Part of pywin32, install via: pip install pywin32
