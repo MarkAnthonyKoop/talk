@@ -906,26 +906,59 @@ def main():
         action="store_true",
         help="Run in demo mode"
     )
+    parser.add_argument(
+        "--version",
+        choices=["4", "5"],
+        default="5",
+        help="Listen version to use (default: 5)"
+    )
     
     args = parser.parse_args()
     
     if args.demo:
         # Run demo
-        print("Demo mode for Listen v4")
+        version_name = f"Listen v{args.version}"
+        print(f"Demo mode for {version_name}")
         print("Features:")
         print("- Speaker identification & enrollment")
         print("- Context-aware responses")
         print("- Voice synthesis replies")
         print("- Intelligent conversation management")
+        if args.version == "5":
+            print("- System automation & command execution")
+            print("- File system operations")
+            print("- Git repository management")
+            print("- Development tools integration")
     else:
-        # Create and run Listen v4
-        assistant = ListenV4(
-            name="Listen v4",
-            db_path=args.db,
-            confidence_threshold=args.confidence,
-            use_tts=not args.no_tts,
-            tts_voice=args.voice
-        )
+        # Create and run appropriate Listen version
+        if args.version == "5":
+            try:
+                from listen.versions.listen_v5 import ListenV5
+                assistant = ListenV5(
+                    name="Listen v5",
+                    db_path=args.db,
+                    confidence_threshold=args.confidence,
+                    use_tts=not args.no_tts,
+                    tts_voice=args.voice
+                )
+                print("🚀 Starting Listen v5 with system automation capabilities")
+            except ImportError as e:
+                print(f"⚠️  Listen v5 not available ({e}), falling back to v4")
+                assistant = ListenV4(
+                    name="Listen v4",
+                    db_path=args.db,
+                    confidence_threshold=args.confidence,
+                    use_tts=not args.no_tts,
+                    tts_voice=args.voice
+                )
+        else:
+            assistant = ListenV4(
+                name="Listen v4",
+                db_path=args.db,
+                confidence_threshold=args.confidence,
+                use_tts=not args.no_tts,
+                tts_voice=args.voice
+            )
         
         # Run async
         asyncio.run(assistant.start(task=args.task))
