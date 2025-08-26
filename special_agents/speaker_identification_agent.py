@@ -613,6 +613,42 @@ class SpeakerIdentificationAgent(Agent):
             log.error(f"Error in SpeakerIdentificationAgent: {e}")
             return json.dumps({"error": str(e)})
     
+    async def identify(self, audio_data: bytes) -> Dict[str, Any]:
+        """
+        Identify speaker from audio data.
+        
+        This is the main action for speaker identification.
+        """
+        if not audio_data:
+            return {
+                "speaker_id": "unknown",
+                "confidence": 0.0,
+                "error": "No audio data provided"
+            }
+        
+        # For now, return mock result
+        # In a real implementation, this would:
+        # 1. Extract embeddings from audio
+        # 2. Compare with known speakers
+        # 3. Return best match or "unknown"
+        
+        audio_length = len(audio_data)
+        if audio_length < 10000:
+            speaker_id = "user_1"
+            confidence = 0.85
+        elif audio_length < 50000:
+            speaker_id = "user_2"
+            confidence = 0.75
+        else:
+            speaker_id = "unknown"
+            confidence = 0.3
+        
+        return {
+            "speaker_id": speaker_id,
+            "confidence": confidence,
+            "audio_length": audio_length
+        }
+    
     @property
     def brief_description(self) -> str:
         """Brief description for workflow."""
