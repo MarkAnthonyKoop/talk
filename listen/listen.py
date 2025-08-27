@@ -908,7 +908,7 @@ def main():
     )
     parser.add_argument(
         "--version",
-        choices=["4", "5"],
+        choices=["4", "5", "6"],
         default="5",
         help="Listen version to use (default: 5)"
     )
@@ -929,9 +929,41 @@ def main():
             print("- File system operations")
             print("- Git repository management")
             print("- Development tools integration")
+        elif args.version == "6":
+            print("- State-of-the-art AI integration")
+            print("- Premium voice processing (Deepgram Nova-3)")
+            print("- Multi-model conversation intelligence")
+            print("- Enterprise MCP server ecosystem")
+            print("- Cost optimization & service orchestration")
     else:
         # Create and run appropriate Listen version
-        if args.version == "5":
+        if args.version == "6":
+            try:
+                from listen.versions.listen_v6 import create_listen_v6
+                assistant = create_listen_v6(tier="standard")
+                print("🚀 Starting Listen v6 - State-of-the-Art AI Integration")
+            except ImportError as e:
+                print(f"⚠️  Listen v6 not available ({e}), falling back to v5")
+                try:
+                    from listen.versions.listen_v5 import ListenV5
+                    assistant = ListenV5(
+                        name="Listen v5",
+                        db_path=args.db,
+                        confidence_threshold=args.confidence,
+                        use_tts=not args.no_tts,
+                        tts_voice=args.voice
+                    )
+                    print("🚀 Starting Listen v5 with system automation capabilities")
+                except ImportError as e2:
+                    print(f"⚠️  Listen v5 also not available ({e2}), falling back to v4")
+                    assistant = ListenV4(
+                        name="Listen v4",
+                        db_path=args.db,
+                        confidence_threshold=args.confidence,
+                        use_tts=not args.no_tts,
+                        tts_voice=args.voice
+                    )
+        elif args.version == "5":
             try:
                 from listen.versions.listen_v5 import ListenV5
                 assistant = ListenV5(
