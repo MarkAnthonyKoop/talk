@@ -908,9 +908,9 @@ def main():
     )
     parser.add_argument(
         "--version",
-        choices=["4", "5", "6"],
-        default="5",
-        help="Listen version to use (default: 5)"
+        choices=["4", "5", "6", "7"],
+        default="7",
+        help="Listen version to use (default: 7 - Full agentic architecture)"
     )
     
     args = parser.parse_args()
@@ -935,9 +935,31 @@ def main():
             print("- Multi-model conversation intelligence")
             print("- Enterprise MCP server ecosystem")
             print("- Cost optimization & service orchestration")
+        elif args.version == "7":
+            print("- Full agentic architecture with PlanRunner")
+            print("- Dynamic execution plans")
+            print("- Inter-agent communication via Blackboard")
+            print("- Parallel agent execution support")
+            print("- Modular, reusable agent components")
+            print("- Async-to-sync agent bridging")
     else:
         # Create and run appropriate Listen version
-        if args.version == "6":
+        if args.version == "7":
+            try:
+                from listen.versions.listen_v7 import ListenV7
+                assistant = ListenV7(
+                    name="Listen v7",
+                    service_tier="standard"
+                )
+                print("🚀 Starting Listen v7 - Full Agentic Architecture with PlanRunner")
+                print("📋 Dynamic plans: voice_command, conversation, quick_action")
+                print("🤖 Agents ready: voice, intent, security, execution, response")
+            except ImportError as e:
+                print(f"⚠️  Listen v7 not available ({e}), falling back to v6")
+                from listen.versions.listen_v6 import create_listen_v6
+                assistant = create_listen_v6(tier="standard")
+                print("🚀 Starting Listen v6 - State-of-the-Art AI Integration")
+        elif args.version == "6":
             try:
                 from listen.versions.listen_v6 import create_listen_v6
                 assistant = create_listen_v6(tier="standard")
